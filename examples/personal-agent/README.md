@@ -1,4 +1,4 @@
-# Personal AI Agent Example
+# Personal AI Agent
 
 This example shows how to set up and use a personal AI agent. You can customize and extend it for tasks like automation or productivity.
 
