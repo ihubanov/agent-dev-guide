@@ -1,72 +1,76 @@
-# Amazon Agent
+# Amazon Agent Setup Guide
 
-Welcome to the Amazon Agent setup guide. Follow these steps to get your environment ready.
+Follow these simple steps to set up and run the Amazon Agent.
 
 ---
 
-## 1. Clone the GitHub Repository
+## 1. Clone the Repository
 
-Clone the template repository to your local machine:
+Open your terminal and run:
 
 ```bash
-git clone https://github.com/eternalai-org/agent-dev-guide
-cd examples/amazon-agent
-````
+git clone https://github.com/eternalai-org/agent-dev-guide.git
+cd agent-dev-guide/examples/amazon-agent
+```
 
 ---
 
 ## 2. Prerequisites
 
-Ensure you have the following installed:
+Make sure you have [Docker](https://www.docker.com/) installed on your computer.
 
-* [Docker](https://www.docker.com/)
+---
 
 ## 3. Build the Docker Image
 
-Run this command to build the Docker image:
+Build the Docker image with:
 
 ```bash
-docker build -t container_name .
+docker build -t amazon-agent .
 ```
 
 ---
 
-## 4. Run the Docker Container & Start the Agent
+## 4. Run the Docker Container
 
-Start your container and set environment variables:
+Start the container with the following command:
 
 ```bash
 docker run --rm -it \
-  -v ${pwd}:/workspace \
+  -v $(pwd):/workspace \
   -p 8000:80 -p 6080:6080 \
   -e LLM_BASE_URL=http://localmodel:65534/v1 \
   -e LLM_API_KEY=unknown \
   -e LLM_MODEL_ID=model-name \
   --entrypoint /bin/bash \
   --add-host=localmodel:host-gateway \
-  container_name
+  amazon-agent
 ```
 
-Inside the container, start the server:
+---
+
+## 5. Start the Agent Server
+
+Inside the container, run:
 
 ```bash
-cd /workspace    # If not already in this directory
+cd /workspace
 python server.py
 ```
 
 ---
 
-## 5. Open the Agent Interface in Your Browser
+## 6. Open the Agent Interface
 
-Access the interface via:
+In your browser, go to:
 
-[http://localhost:6080/vnc.html?host=localhost\&port=6080\&autoconnect=true](http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true)
+[http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true](http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true)
 
 ---
 
-## 6. Send a Prompt to the Agent
+## 7. Test the Agent
 
-Test the agent with a prompt using `curl`:
+You can test the agent by sending a prompt with `curl`:
 
 ```bash
 curl --location 'http://0.0.0.0:8000/prompt' \
@@ -81,9 +85,3 @@ curl --location 'http://0.0.0.0:8000/prompt' \
     "stream": true
   }'
 ```
-
----
-
-## ✅ Done
-
-Your agent is now up and running and ready to process requests.
