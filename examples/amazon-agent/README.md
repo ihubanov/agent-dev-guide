@@ -85,3 +85,17 @@ curl --location 'http://0.0.0.0:8000/prompt' \
     "stream": true
   }'
 ```
+
+---
+
+## 8. Customizing and Expanding the Agent
+
+You can extend the agent to support more tasks and capabilities by following these steps:
+
+- **Implement More Functions in `agent.py`:**
+
+  - The `prompt` function in `agent.py` is responsible for handling user input and determining the agent's behavior. You can add more logic to this function to support additional tasks or customize how the agent responds to different prompts.
+
+- **Define and Handle More Tool Calls:**
+  - To add new capabilities, define additional tool functions in `tool_impl.py`. Each function should implement the logic for a specific tool or action the agent can perform.
+  - Register and describe these tools in `tools.py`, specifying their names, descriptions, and parameters. This allows the agent to recognize and use the new tools when needed.

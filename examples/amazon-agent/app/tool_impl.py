@@ -706,6 +706,7 @@ async def adjust_cart(ctx: BrowserContext, **args):
                 except Exception:
                     pass
             else:
+                
                 quantity_span = await cart_item.query_selector('span[data-a-selector="value"]')
                 if quantity_span:
                     try:
