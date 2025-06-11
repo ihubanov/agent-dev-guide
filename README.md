@@ -8,10 +8,10 @@ This kit includes examples, tools, and guides to help you create both **personal
 
 ## Features
 
-- 🌐 Multi-language support (TypeScript & Python)
-- 🧠 Easy integration with local AI models
-- 🔧 Ready-to-use agent examples
-- 📦 Guide for packaging & publishing agents
+- Multi-language support (TypeScript & Python)
+- Easy integration with local AI models
+- Ready-to-use agent examples
+- Guide for packaging & publishing agents
 
 ---
 
@@ -28,7 +28,7 @@ This kit includes examples, tools, and guides to help you create both **personal
 
 ---
 
-## 🧪 Quick Start
+## Quick Start
 
 ### 1. Clone the repo
 
@@ -53,18 +53,18 @@ Want to share your agent? See [`packaging.md`](packaging.md) for how to package 
 
 ---
 
-## 💡 Contributing
+## Contributing
 
 Contributions are welcome! Please open issues or pull requests.
 
 ---
 
-## 🧾 License
+## License
 
 MIT – Feel free to use and modify.
 
 ---
 
-## 🙋‍♀️ Questions?
+## Questions?
 
 Open an issue or start a discussion.
