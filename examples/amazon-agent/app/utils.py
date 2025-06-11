@@ -1,45 +1,25 @@
-from io import StringIO
-import sys
-from json_repair import repair_json
-import logging 
-import datetime
-import os
+import asyncio
 import base64
-import uuid
-import time
+import datetime
 import json
-from browser_use.browser.context import BrowserContext
-from langchain_openai import ChatOpenAI
-from browser_use import Agent
-from typing import AsyncGenerator, Any
-from pydantic import BaseModel
+import logging
+import os
+import time
+import uuid
+from typing import Any, AsyncGenerator
 from urllib.parse import urlparse
 
-import logging
-import asyncio
+from browser_use import Agent
+from browser_use.browser.context import BrowserContext
+from json_repair import repair_json
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
+
+from .callbacks import on_task_completed, on_task_start
 from .controllers import get_controller
-from .callbacks import (
-    on_task_completed, 
-    on_task_start
-)
 from .models.oai_compatible_models import ChatCompletionStreamResponse
 
-
 logger = logging.getLogger()
-
-class CustomStream(StringIO):
-    pass
-    
-class STDOutCapture(object):
-    def __init__(self, buffer: StringIO):
-        self.orig = sys.stdout
-        self.buffer = buffer 
- 
-    def __enter__(self):
-        sys.stdout = self.buffer
-
-    def __exit__(self, *_):
-        sys.stdout = self.orig
 
 class IncrementID(object):
     def __init__(self, start: int = 1):
@@ -147,9 +127,6 @@ async def refine_chat_history(messages: list[dict[str, str]], system_prompt: str
             "role": "user",
             "content": refined_messages[-1]
         }
-
-    # current_time_utc_str = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    # refined_messages[-1]['content'] += f'\nCurrent time is {current_time_utc_str} UTC'
 
     return refined_messages
 
@@ -312,16 +289,13 @@ async def browse(task_query: str, ctx: BrowserContext, max_steps: int = 10) -> A
         openai_api_key=os.getenv("LLM_API_KEY", 'no-need'),
         temperature=0.0,
     )
-    logger.info(f"Browse task: {ctx.__dict__}")
-    logger.info(f"Browse type: {type(ctx)}")
+
     current_agent = Agent(
         task=task_query,
         llm=model,
-        # page_extraction_llm=model,
         browser_profile=ctx.browser_profile,
         browser_session=ctx,
-        controller=controller,
-        save_conversation_path="logs/conversation"  # Save chat logs
+        controller=controller
     )
 
     res = await current_agent.run(

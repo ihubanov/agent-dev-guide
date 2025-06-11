@@ -23,7 +23,7 @@ from browser_use.browser.context import BrowserContextConfig
 from browser_use import BrowserSession, BrowserConfig
 import xml.etree.ElementTree as ET
 from app.config import AMAZON_URL
-from app.tool_impl import is_showing_captcha
+from app.utils import is_showing_captcha
 
 BROWSER_PROFILE_DIR = "/storage/browser-profiles"
 

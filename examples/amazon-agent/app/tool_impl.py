@@ -45,7 +45,6 @@ async def search_products(ctx: BrowserContext, **args):
     logger.info(f"Origin location: {origin}")
     try:
         url = f"{origin}/s?k={urllib.parse.quote(query)}"
-        # TODO: add filter by price, rating, reviews, prime, etc.
         await page.goto(url)
         await page.wait_for_load_state('domcontentloaded')
         await page.query_selector('[role="listitem"].s-result-item')
@@ -288,22 +287,6 @@ async def get_product_detail(ctx: BrowserContext, **args):
             "cutoff": delivery_cutoff,
             "price": delivery_price
         }
-    
-    # # Variations
-    # variations = []
-    # variation_els = await page.query_selector_all('#variation_id_1, #variation_id_2, #variation_id_3, #variation_id_4, #variation_id_5, #variation_id_6, #variation_id_7, #variation_id_8, #variation_id_9, #variation_id_10')
-    # for el in variation_els:
-    #     variation = (await el.text_content()).strip()
-    #     if variation:
-    #         variations.append(variation)
-        
-    # # Options selector
-    # options_selector = None
-    # options_el = await page.query_selector('#variation_id_1, #variation_id_2, #variation_id_3, #variation_id_4, #variation_id_5, #variation_id_6, #variation_id_7, #variation_id_8, #variation_id_9, #variation_id_10')
-    # if options_el:
-    #     options_selector = await options_el.get_attribute('data-a-list-id')
-    #     if options_selector:
-    #         options_selector = options_selector.split('_')[-1]
 
     product_detail = {
         "title": title,
@@ -313,8 +296,6 @@ async def get_product_detail(ctx: BrowserContext, **args):
         "features": features,
         "description": description,
         "url": link,
-        # "options_selector": options_selector,
-        # "variations": variations,
         "delivery": delivery
     }
 
@@ -358,7 +339,6 @@ async def check_out(ctx: BrowserContext, **args):
         # Read context from #widget-purchaseConfirmationDetails and response to the user
         await page.wait_for_selector("#widget-purchaseConfirmationDetails h4", state='visible')
         confirmation_details = await page.query_selector("#widget-purchaseConfirmationDetails h4")
-        confirmation_details_content =  await page.query_selector('.a-alert-content span') 
 
         if confirmation_details:
             confirmation_details_status = await confirmation_details.text_content()
