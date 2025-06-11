@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import { ChatCompletionChunk } from "openai/resources/chat";
 
 import { PromptPayload } from "./types";
-import { MODEL, LLM_API_KEY, LLM_BASE_URL } from "../constants";
+import { MODEL, LLM_API_KEY, LLM_BASE_URL, SYSTEM_PROMPT } from "../constants";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,10 +17,9 @@ const openAI = new OpenAI({
   maxRetries: 3,
 });
 
-const systemPrompt = fs.readFileSync(
-  path.join(__dirname, "../system-prompt.txt"),
-  "utf8"
-);
+const systemPrompt =
+  SYSTEM_PROMPT ||
+  fs.readFileSync(path.join(__dirname, "../system-prompt.txt"), "utf8");
 
 const enqueueMessage = (
   stop: boolean,

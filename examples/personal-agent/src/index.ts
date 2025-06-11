@@ -35,76 +35,68 @@ const handlePrompt = async (req: Request, res: StreamResponse) => {
     if (!!payload.ping) {
       res.send("online");
     } else {
-      if (payload.stream) {
-        // Set headers for SSE
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
+      // Set headers for SSE
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
 
-        // Stream the response
-        try {
-          console.log("Starting streaming response");
-          const result = await prompt(payload);
+      // Stream the response
+      try {
+        console.log("Starting streaming response");
+        const result = await prompt(payload);
 
-          if (result && typeof result === "object" && "getReader" in result) {
-            console.log("Got readable stream, starting to read");
-            const reader = (result as ReadableStream).getReader();
+        if (result && typeof result === "object" && "getReader" in result) {
+          console.log("Got readable stream, starting to read");
+          const reader = (result as ReadableStream).getReader();
 
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) {
-                  console.log("Stream complete");
-                  res.write("data: [DONE]\n\n");
-                  break;
-                }
-                // Forward the chunk directly
-                res.write(value);
-                // Flush the response
-                if (typeof res.flush === "function") {
-                  res.flush();
-                }
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                console.log("Stream complete");
+                res.write("data: [DONE]\n\n");
+                break;
               }
-            } catch (error) {
-              console.error("Stream reading error:", error);
-              res.write(
-                `data: ${JSON.stringify({
-                  type: "error",
-                  error:
-                    error instanceof Error ? error.message : "Unknown error",
-                })}\n\n`
-              );
-            } finally {
-              reader.releaseLock();
-              res.end();
+              // Forward the chunk directly
+              res.write(value);
+              // Flush the response
+              if (typeof res.flush === "function") {
+                res.flush();
+              }
             }
-          } else {
-            console.log("Got non-stream response:", result);
-            // For non-stream responses in streaming mode, format as SSE
+          } catch (error) {
+            console.error("Stream reading error:", error);
             res.write(
               `data: ${JSON.stringify({
-                type: "complete",
-                content: result,
+                type: "error",
+                error: error instanceof Error ? error.message : "Unknown error",
               })}\n\n`
             );
-            res.write("data: [DONE]\n\n");
+          } finally {
+            reader.releaseLock();
             res.end();
           }
-        } catch (error) {
-          console.error("Stream processing error:", error);
+        } else {
+          console.log("Got non-stream response:", result);
+          // For non-stream responses in streaming mode, format as SSE
           res.write(
             `data: ${JSON.stringify({
-              type: "error",
-              error: error instanceof Error ? error.message : "Unknown error",
+              type: "complete",
+              content: result,
             })}\n\n`
           );
+          res.write("data: [DONE]\n\n");
           res.end();
         }
-      } else {
-        // Non-streaming response
-        const result = await prompt(payload);
-        console.log("result: ", result);
-        res.json(result);
+      } catch (error) {
+        console.error("Stream processing error:", error);
+        res.write(
+          `data: ${JSON.stringify({
+            type: "error",
+            error: error instanceof Error ? error.message : "Unknown error",
+          })}\n\n`
+        );
+        res.end();
       }
     }
   } catch (error) {

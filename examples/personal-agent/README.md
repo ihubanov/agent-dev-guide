@@ -26,13 +26,40 @@ This example shows how to set up and use a personal AI agent. You can customize 
 
 ## How to Use
 
-Start the agent:
+Develop the agent:
 
    ```bash
-   npm start
+   npm run dev
    # or
-   yarn start
+   yarn dev
    ```
+## Customizing the Agent
+
+You can customize the agent's behavior by modifying the `system-prompt.txt` file. This file contains the instructions that define how your agent should behave and respond.
+
+### Update System Prompt
+
+1. Add your custom instructions to the file. Here's an example:
+
+   ```text
+   You are a helpful AI assistant focused on productivity and task management. Your responses should be:
+   - Clear and concise
+   - Action-oriented
+   - Focused on helping users achieve their goals
+   
+   When responding to users:
+   1. Understand their needs and goals
+   2. Provide specific, actionable advice
+   3. Break down complex tasks into manageable steps
+   4. Follow up to ensure understanding
+   ```
+
+2. The agent will automatically use these instructions when processing requests.
+
+### Environment Variables
+
+You can also set the system prompt using the `SYSTEM_PROMPT` environment variable:
+
 
 ### Example API Call
 
@@ -47,8 +74,7 @@ curl --location 'http://localhost:4000/prompt' \
       "role": "user",
       "content": "hello"
     }
-  ],
-  "stream": true
+  ]
 }'
 ```
 
