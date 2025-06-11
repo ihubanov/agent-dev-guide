@@ -1,2 +1,2 @@
-rm personal-agent.zip
-zip -r personal-agent.zip src Dockerfile package.json tsconfig.json
+rm package.zip
+zip -r package.zip src Dockerfile package.json tsconfig.json
