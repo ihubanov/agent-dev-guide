@@ -6,28 +6,6 @@ This kit includes examples, tools, and guides to help you create both **personal
 
 ---
 
-## Features
-
-- Multi-language support (TypeScript & Python)
-- Easy integration with local AI models
-- Ready-to-use agent examples
-- Guide for packaging & publishing agents
-
----
-
-## Project Structure
-
-```
-
-.
-├── examples/        # Example agents (personality, utilities)
-├── packaging.md     # How to package & publish your agents
-├── README.md        # You're here!
-
-````
-
----
-
 ## Quick Start
 
 ### 1. Clone the repo
