@@ -9,8 +9,8 @@ Welcome to the Amazon Agent setup guide. Follow these steps to get your environm
 Clone the template repository to your local machine:
 
 ```bash
-git clone https://github.com/eternalai-org/agent-dev-guide/examples/amazon-agent
-cd amazon-agent
+git clone https://github.com/eternalai-org/agent-dev-guide
+cd examples/amazon-agent
 ````
 
 ---
@@ -21,21 +21,7 @@ Ensure you have the following installed:
 
 * [Docker](https://www.docker.com/)
 
----
-
-## 3. (Optional) Set Environment Variables
-
-You may define these environment variables for flexibility:
-
-```env
-LLM_MODEL_ID=model-name
-LLM_BASE_URL=http://localhost:65534/v1
-LLM_API_KEY=unknown
-```
-
----
-
-## 4. Build the Docker Image
+## 3. Build the Docker Image
 
 Run this command to build the Docker image:
 
@@ -45,7 +31,7 @@ docker build -t container_name .
 
 ---
 
-## 5. Run the Docker Container & Start the Agent
+## 4. Run the Docker Container & Start the Agent
 
 Start your container and set environment variables:
 
@@ -70,7 +56,7 @@ python server.py
 
 ---
 
-## 6. Open the Agent Interface in Your Browser
+## 5. Open the Agent Interface in Your Browser
 
 Access the interface via:
 
@@ -78,7 +64,7 @@ Access the interface via:
 
 ---
 
-## 7. Send a Prompt to the Agent
+## 6. Send a Prompt to the Agent
 
 Test the agent with a prompt using `curl`:
 

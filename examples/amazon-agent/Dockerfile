@@ -41,12 +41,9 @@ env SCREEN_COLOR_DEPTH_BITS=24
 env NO_VNC_PORT=6080
 env CHROME_DEBUG_PORT=9222
 
-env OPENAI_BASE_URL="http://localmodel:65534/v1"
-env OPENAI_API_KEY="no-need"
-
 env LLM_BASE_URL="http://localmodel:65534/v1"
 env LLM_API_KEY="no-need"
-env LLM_MODEL_ID="no-need"
+env LLM_MODEL_ID="unknown"
 env IN_DOCKER=1
 
 entrypoint ["python", "-O", "server.py"]
