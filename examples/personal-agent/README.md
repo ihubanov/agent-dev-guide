@@ -56,9 +56,7 @@ You can customize the agent's behavior by modifying the `system-prompt.txt` file
 
 2. The agent will automatically use these instructions when processing requests.
 
-### Environment Variables
-
-You can also set the system prompt using the `SYSTEM_PROMPT` environment variable:
+You can also set the system prompt using the `SYSTEM_PROMPT` environment variable.
 
 
 ### Example API Call

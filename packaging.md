@@ -4,9 +4,9 @@ This guide will help you set up and upload your agent step by step.
 
 ---
 
-## 1. Package the Browser Agent
+## 1. Package Your Agent
 
-1. Open the your agent folder.
+1. Open your agent folder.
 2. Run the following command in your terminal:
 
    ```bash

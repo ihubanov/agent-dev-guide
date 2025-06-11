@@ -28,21 +28,3 @@ Check out [How to run local models](https://github.com/eternalai-org/local-ai) f
 ## Packaging & Publishing
 
 Want to share your agent? See [`packaging.md`](packaging.md) for how to package and publish agents.
-
----
-
-## Contributing
-
-Contributions are welcome! Please open issues or pull requests.
-
----
-
-## License
-
-MIT – Feel free to use and modify.
-
----
-
-## Questions?
-
-Open an issue or start a discussion.
