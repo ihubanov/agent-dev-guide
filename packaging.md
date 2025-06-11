@@ -38,7 +38,7 @@ This guide will help you set up and upload your agent step by step.
 
 ---
 
-## 💡 Bonus Tips
+## Bonus Tips
 * Visit [eternalai.org/your-agents](https://eternalai.org/your-agents) to manage your agents.
 * You can show or hide your agent.
 * You can update the code later.
