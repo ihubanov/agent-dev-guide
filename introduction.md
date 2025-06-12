@@ -1,0 +1,3 @@
+## Introduction
+
+The personal-agent is a customizable AI agent designed to assist with a variety of tasks, including automation and productivity. As a part of the broader Agent Starter Kit, it provides a foundation for users to build and tailor an intelligent agent to their specific needs. Whether it's managing daily workflows, automating repetitive processes, or simply boosting overall productivity, the personal-agent offers a flexible framework that can be extended and adapted. Users can modify the agent's behavior through a system prompt, allowing for a high degree of personalization in how the agent responds and assists.
