@@ -32,3 +32,8 @@ ehthumbs.db
 Thumbs.db
 # Coverage directory
 coverage/
+
+.yarn/
+.yarnrc.yml
+yarn.lock
+install-state.gz
