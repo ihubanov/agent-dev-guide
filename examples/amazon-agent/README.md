@@ -33,7 +33,9 @@ docker build -t amazon-agent .
 
 ## 4. Run the Docker Container
 
-Start the container with the following command:
+You can start the container in two ways, depending on how you want to provide environment variables:
+
+### **Option 1: Pass Environment Variables Directly**
 
 ```bash
 docker run --rm -it \
@@ -46,6 +48,26 @@ docker run --rm -it \
   --add-host=localmodel:host-gateway \
   amazon-agent
 ```
+
+### Option 2: Use a `.env` File
+
+- Copy the provided `.env.example` file to a new file named `.env`.
+
+- Then, start the container using the `--env-file` flag:
+
+  ```bash
+  docker run --rm -it \
+    -v $(pwd):/workspace \
+    -p 8000:80 -p 6080:6080 \
+    --env-file .env \
+    --entrypoint /bin/bash \
+    --add-host=localmodel:host-gateway \
+    amazon-agent
+  ```
+
+**Note:**
+- If you use both `-e` and `--env-file`, the `-e` flags take precedence for any variables specified in both places.
+- Using a `.env` file is convenient for managing multiple environment variables and keeping sensitive information out of your command history.
 
 ---
 
