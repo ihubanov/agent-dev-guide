@@ -10,8 +10,8 @@
     "node": ">=10"
   },
   "scripts": {
-    "start": "NODE_ENV=production tsx ./src/index.ts",
-    "dev": "PORT=4000 tsx watch ./src/index.ts",
+    "start": "tsx ./src/index.ts",
+    "dev": "tsx watch ./src/index.ts",
     "test": "jest"
   },
   "devDependencies": {
