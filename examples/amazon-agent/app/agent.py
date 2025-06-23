@@ -73,9 +73,16 @@ async def prompt(messages: list[dict[str, str]], browser_context: BrowserContext
 
     functions = get_functions()
 
+    # Helper to clean environment variables (strip quotes and handle empty values)
+    def clean_env_var(var, default):
+        val = os.getenv(var)
+        if val:
+            return val.strip('"\'') or default
+        return default
+
     llm = openai.AsyncClient(
-        base_url=os.getenv("LLM_BASE_URL", "http://localmodel:65534/v1"),
-        api_key=os.getenv("LLM_API_KEY", "no-need"),
+        base_url=clean_env_var("LLM_BASE_URL", "http://localmodel:65534/v1"),
+        api_key=clean_env_var("LLM_API_KEY", "no-need"),
         max_retries=3
     )
 
@@ -89,7 +96,7 @@ async def prompt(messages: list[dict[str, str]], browser_context: BrowserContext
 
     try:
         completion = await llm.chat.completions.create(
-            model=os.getenv("LLM_MODEL_ID", 'local-llm'),
+            model=clean_env_var("LLM_MODEL_ID", 'local-llm'),
             messages=messages,
             tools=functions,
             tool_choice="auto",
@@ -191,7 +198,7 @@ async def prompt(messages: list[dict[str, str]], browser_context: BrowserContext
 
             completion = await llm.chat.completions.create(
                 messages=messages,
-                model=os.getenv("LLM_MODEL_ID", 'local-llm'),
+                model=clean_env_var("LLM_MODEL_ID", 'local-llm'),
                 tools=functions if need_toolcalls else openai._types.NOT_GIVEN,  # type: ignore
                 tool_choice="auto" if need_toolcalls else openai._types.NOT_GIVEN,  # type: ignore
                 seed=42,
