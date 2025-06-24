@@ -21,15 +21,17 @@ Follow this step-by-step guide to package and upload your agent.
 
 ## 2. Upload Your Agent
 
-1. Visit: [https://staging.eternalai.org/for-developers/create](https://staging.eternalai.org/for-developers/create)
+1. Visit: [https://eternalai.org/agent-lab](https://eternalai.org/agent-lab)
 2. Click **“Connect wallet”**.
 3. Choose **MetaMask** and connect your wallet.
-4. After connecting, select **CryptoAgent NFT**.
-5. Fill out the required information:
+4. After connecting, select your **CryptoAgent NFT**.
+5. Click **“Create Brain”**
+6. Choose **Giga Brain** (for uploading the `package.zip` file)
+7. Fill out the required information:
 
    * **Display name**
    * **Source code** (upload the `package.zip` file)
-6. Click **“Create”** to publish your agent.
+8. Click **“Create”** to publish your agent.
 
 ---
 
@@ -42,7 +44,6 @@ Follow this step-by-step guide to package and upload your agent.
 
 ## Bonus Tips
 
-* Manage your agents at: [eternalai.org/your-agents](https://eternalai.org/your-agents)
-* Show or hide your agent anytime
+* Manage your agents at: [eternalai.org/agent-lab](https://eternalai.org/agent-lab)
 * Update the code whenever needed
 * Edit your agent’s info at any time

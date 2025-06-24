@@ -1,4 +1,4 @@
-export const PORT = process.env.PORT || 80;
+export const PORT = process.env.PORT || 4000;
 export const NODE_ENV = process.env.NODE_ENV || "development";
 
 export const LLM_API_KEY = process.env.LLM_API_KEY || "sk-proj-unknown";
