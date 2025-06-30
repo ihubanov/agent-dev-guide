@@ -1,0 +1,7 @@
+fastapi[standard]
+fastmcp
+pydantic
+googlesearch-python
+json-repair
+openai
+playwright
