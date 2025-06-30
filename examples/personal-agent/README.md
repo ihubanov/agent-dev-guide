@@ -64,7 +64,7 @@ You can also set the system prompt using the `SYSTEM_PROMPT` environment variabl
 You can interact with the agent using a simple API call:
 
 ```bash
-curl --location 'http://localhost:4000/prompt' \
+curl --location 'http://localhost:80/prompt' \
 --header 'Content-Type: application/json' \
 --data '{
   "messages": [

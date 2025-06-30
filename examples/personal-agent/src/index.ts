@@ -8,7 +8,6 @@ import type { PromptPayload } from "./prompt/types";
 import { PORT, NODE_ENV } from "./constants";
 
 const app = express();
-const port = PORT;
 
 // Security middleware
 app.use(helmet());
@@ -117,7 +116,7 @@ app.use((err: Error, req: Request, res: Response) => {
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${NODE_ENV || "development"}`);
 });
