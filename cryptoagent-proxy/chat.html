@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Streaming Chat Test (Wider + Correct Reasoning Collapse)</title>
+  <meta name="viewport" content="width=800,initial-scale=1">
+  <style>
+    :root {
+      --bg: #18181a;
+      --card: #232326;
+      --text: #e6e6e6;
+      --ai: #2e2e33;
+      --user: #223344;
+      --think-bg: #33343a;
+      --think-text: #a8a8a8;
+      --border: #2a2a2a;
+      --primary: #5ad;
+      --primary-hover: #38c;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #chat {
+      width: 680px; max-width: 98vw; margin: 2em auto 0 auto;
+      background: var(--card); border-radius: 14px; border: 1px solid var(--border);
+      min-height: 240px; padding: 1em; box-shadow: 0 2px 8px #0004;
+      overflow-y: auto; max-height: 65vh;
+    }
+    .msg-user { margin: 12px 0 4px 0; padding: 8px 12px; background: var(--user); border-radius: 14px; width: fit-content; position: relative;}
+    .msg-ai { margin: 12px 0 4px 0; padding: 8px 12px; background: var(--ai); border-radius: 14px; width: fit-content; border-left: 3px solid var(--primary);}
+    .msg-think {
+      margin: 6px 0 4px 20px;
+      padding: 0;
+      background: none;
+      color: var(--think-text);
+      border-radius: 11px;
+      font-style: italic;
+      font-size: 0.95em;
+      display: inline-block;
+      opacity: 0.9;
+      max-width: 600px;
+      width: fit-content;
+      vertical-align: middle;
+    }
+    .think-collapsed {
+      background: var(--think-bg);
+      color: var(--think-text);
+      border-radius: 11px;
+      padding: 5px 14px;
+      border-left: 2px solid var(--primary);
+      cursor: pointer;
+      font-style: italic;
+      opacity: 0.85;
+      display: inline-block;
+      margin-bottom: 2px;
+      margin-top: 2px;
+      width: fit-content;
+      min-width: 110px;
+      user-select: none;
+    }
+    .think-expanded {
+      background: var(--think-bg);
+      color: var(--think-text);
+      border-radius: 11px;
+      padding: 7px 16px 7px 14px;
+      border-left: 2px solid var(--primary);
+      font-style: italic;
+      display: inline-block;
+      margin-bottom: 2px;
+      margin-top: 2px;
+      width: fit-content;
+      max-width: 600px;
+      word-break: break-word;
+    }
+    .edit-btn {
+      position: absolute;
+      right: -28px;
+      top: 2px;
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 1.05em;
+      cursor: pointer;
+      padding: 0 2px;
+      opacity: 0.7;
+      transition: opacity 0.18s;
+    }
+    .edit-btn:hover { opacity: 1; color: var(--primary-hover);}
+    .edit-input {
+      width: 87%; font-size: 1em;
+      padding: 4px 6px; border-radius: 6px; border: 1px solid var(--primary);
+      background: #181821; color: var(--text);
+      margin-right: 6px;
+    }
+    .edit-save-btn {
+      background: var(--primary);
+      color: #fff; border: none; border-radius: 7px;
+      padding: 2px 13px; font-size: 1em; cursor: pointer;
+      margin-right: 2px;
+    }
+    .edit-cancel-btn {
+      background: #444; color: #fff; border: none;
+      border-radius: 7px; padding: 2px 10px; font-size: 1em; cursor: pointer;
+    }
+    #form {
+      display: flex; gap: 10px;
+      max-width: 680px; margin: 1.5em auto;
+      background: var(--card); border-radius: 12px;
+      border: 1px solid var(--border); padding: 0.5em;
+    }
+    #input {
+      flex: 1; padding: 10px 8px; background: #141417;
+      color: var(--text); border: none; border-radius: 8px;
+      font-size: 1em;
+    }
+    #input:focus { outline: 2px solid var(--primary);}
+    button[type=submit] {
+      background: var(--primary);
+      color: #fff; border: none; border-radius: 8px; padding: 0 22px; font-size: 1em; cursor: pointer;
+      transition: background 0.2s;
+    }
+    button[type=submit]:hover { background: var(--primary-hover);}
+    ::selection { background: #55aadd44; }
+    /* Markdown list styling */
+    .msg-ai ul, .msg-ai ol {
+      margin: 0.5em 0 0.5em 1.5em;
+      padding-left: 1.2em;
+    }
+    .msg-ai li {
+      margin-bottom: 0.2em;
+    }
+    /* Inline code */
+    .msg-ai code {
+      background: #23272e;
+      color: #e6e6e6;
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-family: 'Fira Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 0.98em;
+    }
+    /* Block code */
+    .msg-ai pre {
+      background: #23272e;
+      color: #e6e6e6;
+      border-radius: 8px;
+      padding: 1em;
+      margin: 0.7em 0;
+      overflow-x: auto;
+      font-family: 'Fira Mono', 'Consolas', 'Monaco', monospace;
+      font-size: 1em;
+    }
+    .msg-ai pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div id="chat"></div>
+  <form id="form" autocomplete="off">
+    <input id="input" type="text" placeholder="Type a message..." autocomplete="off" autofocus />
+    <button type="submit">Send</button>
+  </form>
+<script>
+const endpoint = 'http://localhost:3080/prompt';
+const chat = document.getElementById('chat');
+const form = document.getElementById('form');
+const input = document.getElementById('input');
+let messages = [];
+
+function scrollToBottom() {
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderChat() {
+  chat.innerHTML = '';
+  messages.forEach((msg, idx) => {
+    if (msg.role === "user") {
+      const div = document.createElement('div');
+      div.className = 'msg-user';
+      div.innerHTML = `<b>You:</b> <span>${escapeHTML(msg.content)}</span>`;
+      // const editBtn = document.createElement('button');
+      // editBtn.className = 'edit-btn';
+      // editBtn.title = 'Edit message';
+      // editBtn.innerHTML = '✏️';
+      // editBtn.onclick = () => startEditUserMessage(idx, div, msg.content);
+      // div.appendChild(editBtn);
+      chat.appendChild(div);
+    } else if (msg.role === "assistant") {
+      const div = document.createElement('div');
+      div.className = 'msg-ai';
+      div.innerHTML = `<b>CryptoAgent:</b> `;
+      let rest = msg.content;
+      let i = 0;
+      let inThink = false;
+      while (rest && i < 10000) {
+        i++;
+        let open = rest.indexOf('<think>');
+        if (open === -1) {
+          appendMarkdown(div, rest, false);
+          break;
+        }
+        if (open > 0) {
+          appendMarkdown(div, rest.slice(0, open), false);
+        }
+        rest = rest.slice(open + 7);
+        let close = rest.indexOf('</think>');
+        if (close === -1) {
+          appendMarkdown(div, rest, true);
+          break;
+        }
+        appendMarkdown(div, rest.slice(0, close), true);
+        rest = rest.slice(close + 8);
+      }
+      chat.appendChild(div);
+    }
+  });
+  scrollToBottom();
+}
+
+function appendMarkdown(parent, text, isThink) {
+  if (!text) return;
+  if (isThink) {
+    const thinkDiv = document.createElement('span');
+    thinkDiv.className = 'msg-think';
+    const collapsed = document.createElement('span');
+    collapsed.className = 'think-collapsed';
+    collapsed.textContent = 'Reasoning (click to expand)';
+    const expanded = document.createElement('span');
+    expanded.className = 'think-expanded';
+    expanded.style.display = 'none';
+    expanded.innerHTML = marked.parse(text);
+    collapsed.onclick = () => {
+      collapsed.style.display = 'none';
+      expanded.style.display = '';
+    };
+    expanded.onclick = () => {
+      expanded.style.display = 'none';
+      collapsed.style.display = '';
+    };
+    thinkDiv.appendChild(collapsed);
+    thinkDiv.appendChild(expanded);
+    parent.appendChild(thinkDiv);
+  } else {
+    const div = document.createElement('span');
+    div.innerHTML = marked.parse(text);
+    parent.appendChild(div);
+  }
+}
+
+// Commenting out the edit user message function
+/*
+function startEditUserMessage(idx, div, oldText) {
+  div.innerHTML = '';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = oldText;
+  inp.className = 'edit-input';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'edit-save-btn';
+  saveBtn.textContent = 'Save';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'edit-cancel-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => renderChat();
+  saveBtn.onclick = async () => {
+    messages[idx].content = inp.value.trim();
+    messages = messages.slice(0, idx + 1);
+    renderChat();
+    await sendMessagesFrom(idx + 1);
+  };
+  inp.onkeydown = (e) => { if (e.key === 'Enter') saveBtn.onclick(); };
+  div.appendChild(inp);
+  div.appendChild(saveBtn);
+  div.appendChild(cancelBtn);
+  inp.focus();
+}
+*/
+
+async function sendMessagesFrom(startIdx) {
+  for (let i = startIdx; i < messages.length; i++) {
+    if (messages[i].role === 'assistant') continue;
+    chat.innerHTML += `<div class="msg-ai"><b>CryptoAgent:</b> <span id="ai-span"></span></div>`;
+    const aiSpan = chat.querySelector('#ai-span:last-child');
+    let buffer = '', inThink = false, aiContent = '', thinkBuffer = '';
+    let lastThinkDiv = null;
+    const resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messages.slice(0, i+1), stream: true })
+    });
+    if (!resp.body) return;
+    const reader = resp.body.getReader();
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buffer += new TextDecoder().decode(value);
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        try {
+          const json = JSON.parse(line.slice(5).trim());
+          let content = json.choices?.[0]?.delta?.content;
+          if (content) {
+            aiContent += content;
+            let idx2 = 0;
+            while (idx2 < content.length) {
+              if (!inThink) {
+                const open = content.indexOf('<think>', idx2);
+                if (open === -1) {
+                  // Normal text streaming
+                  updateStreamingMarkdown(aiSpan, aiContent, false);
+                  break;
+                }
+                // Normal text up to <think>
+                updateStreamingMarkdown(aiSpan, aiContent.slice(0, aiContent.length - (content.length - open)), false);
+                idx2 = open + 7;
+                inThink = true;
+                thinkBuffer = '';
+              }
+              if (inThink) {
+                const close = content.indexOf('</think>', idx2);
+                if (close === -1) {
+                  // Reasoning streaming
+                  thinkBuffer += content.slice(idx2);
+                  updateStreamingMarkdown(aiSpan, thinkBuffer, true);
+                  break;
+                }
+                // Reasoning up to </think>
+                thinkBuffer += content.slice(idx2, close);
+                updateStreamingMarkdown(aiSpan, thinkBuffer, true);
+                idx2 = close + 8;
+                inThink = false;
+                // After </think>, continue with normal text
+                aiContent += content.slice(idx2);
+                updateStreamingMarkdown(aiSpan, aiContent, false);
+                break;
+              }
+            }
+          }
+        } catch {}
+      }
+      scrollToBottom();
+    }
+    messages[i+1] = { role: 'assistant', content: aiContent };
+    renderChat();
+  }
+}
+
+// Helper to update streaming markdown in-place
+function updateStreamingMarkdown(span, buffer, isThink) {
+  if (isThink) {
+    let last = span.lastElementChild;
+    if (!last || !last.classList.contains('msg-think')) {
+      // create new bubble
+      last = document.createElement('span');
+      last.className = 'msg-think';
+      // collapsed bar
+      const collapsed = document.createElement('span');
+      collapsed.className = 'think-collapsed';
+      collapsed.textContent = 'Reasoning (click to expand)';
+      const expanded = document.createElement('span');
+      expanded.className = 'think-expanded';
+      expanded.style.display = 'none';
+      collapsed.onclick = () => {
+        collapsed.style.display = 'none';
+        expanded.style.display = '';
+      };
+      expanded.onclick = () => {
+        expanded.style.display = 'none';
+        collapsed.style.display = '';
+      };
+      last.appendChild(collapsed);
+      last.appendChild(expanded);
+      span.appendChild(last);
+    }
+    let expanded = last.querySelector('.think-expanded');
+    expanded.innerHTML = marked.parse(buffer);
+  } else {
+    // Remove trailing empty <think> bubbles
+    let last = span.lastElementChild;
+    if (last && last.classList.contains('msg-think')) {
+      let expanded = last.querySelector('.think-expanded');
+      if (expanded && expanded.innerHTML === '') span.removeChild(last);
+    }
+    // Only one streaming span for normal text
+    let normal = span.querySelector('.streaming-normal');
+    if (!normal) {
+      normal = document.createElement('span');
+      normal.className = 'streaming-normal';
+      span.appendChild(normal);
+    }
+    normal.innerHTML = marked.parse(buffer);
+  }
+}
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  messages.push({ role: "user", content: text });
+  input.value = '';
+  renderChat();
+  scrollToBottom();
+  chat.innerHTML += `<div class="msg-ai"><b>CryptoAgent:</b> <span id="ai-span"></span></div>`;
+  scrollToBottom();
+  const aiSpan = chat.querySelector('#ai-span:last-child');
+  let buffer = '', inThink = false, aiContent = '', thinkBuffer = '';
+  let lastThinkDiv = null;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: messages,
+      stream: true
+    })
+  });
+  if (!response.body) return;
+  const reader = response.body.getReader();
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buffer += new TextDecoder().decode(value);
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue;
+      try {
+        const json = JSON.parse(line.slice(5).trim());
+        let content = json.choices?.[0]?.delta?.content;
+        if (content) {
+          aiContent += content;
+          let idx = 0;
+          while (idx < content.length) {
+            if (!inThink) {
+              const open = content.indexOf('<think>', idx);
+              if (open === -1) {
+                updateStreamingMarkdown(aiSpan, aiContent, false);
+                break;
+              }
+              updateStreamingMarkdown(aiSpan, aiContent.slice(0, aiContent.length - (content.length - open)), false);
+              idx = open + 7;
+              inThink = true;
+              thinkBuffer = '';
+            }
+            if (inThink) {
+              const close = content.indexOf('</think>', idx);
+              if (close === -1) {
+                thinkBuffer += content.slice(idx);
+                updateStreamingMarkdown(aiSpan, thinkBuffer, true);
+                break;
+              }
+              thinkBuffer += content.slice(idx, close);
+              updateStreamingMarkdown(aiSpan, thinkBuffer, true);
+              idx = close + 8;
+              inThink = false;
+              aiContent += content.slice(idx);
+              updateStreamingMarkdown(aiSpan, aiContent, false);
+              break;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    scrollToBottom();
+  }
+  messages.push({ role: "assistant", content: aiContent });
+  renderChat();
+};
+
+function escapeHTML(text) {
+  return text.replace(/[<>&"]/g, c => ({
+    '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'
+  })[c]);
+}
+
+renderChat();
+</script>
+</body>
+</html>
