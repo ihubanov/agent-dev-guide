@@ -1,7 +1,7 @@
 import json
 import re
 import httpx # Using httpx for async requests
-from typing import List, Dict, Any, Tuple, AsyncGenerator
+from typing import List, Dict, Any, Tuple, AsyncGenerator, Optional
 
 # Assuming mcp_server.py is in the same directory or accessible in PYTHONPATH
 # For the tool definition, if needed by the client side preparing the OpenAI call.
