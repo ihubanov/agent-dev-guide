@@ -1,0 +1,10 @@
+openai
+fastapi
+uvicorn[standard]
+termcolor
+python-dotenv
+requests
+aiohttp
+pytest
+pytest-asyncio
+httpx # Already added in utils, but good to ensure it's here for test client
