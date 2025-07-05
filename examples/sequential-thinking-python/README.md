@@ -55,11 +55,13 @@ Edit this file to register new tools or change existing ones.
 Create a `.env` file in the `examples/sequential-thinking-python` directory:
 
 ```env
-LLM_API_KEY=your_openai_api_key_here
-LLM_BASE_URL=http://localhost:65534  # Optional
-MODEL=gpt-4o  # Optional
+LLM_BASE_URL=http://localhost:65534  # Your local LLM server URL
+MODEL=local-model  # Optional, defaults to "local-model"
 NODE_ENV=development
+PORT=8808  # Optional, defaults to 8000
 ```
+
+**Note:** Since this is designed to work with local LLMs, no API key is required. The `LLM_BASE_URL` should point to your local LLM server.
 
 ### 5. Test the MCP Server
 
