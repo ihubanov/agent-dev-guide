@@ -3,8 +3,7 @@ fastapi
 uvicorn[standard]
 termcolor
 python-dotenv
-requests
-aiohttp
+mcp>=1.10.0
+fastmcp>=2.10.0
 pytest
-pytest-asyncio
-httpx # Already added in utils, but good to ensure it's here for test client
+pytest-asyncio 

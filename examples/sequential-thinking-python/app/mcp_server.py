@@ -1,59 +1,73 @@
+#!/usr/bin/env python3
+
+import asyncio
 import json
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, ValidationError
-from typing import List, Dict, Any, Optional, Union
-from termcolor import colored
 import os
+import sys
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass
+from termcolor import colored
+from pathlib import Path
+
+from fastmcp import FastMCP
+
+from app.constants import MCP_SERVER_URL
 
 # Environment variable to disable thought logging
 DISABLE_THOUGHT_LOGGING = os.getenv("DISABLE_THOUGHT_LOGGING", "false").lower() == "true"
 
-class ThoughtDataInput(BaseModel):
+
+@dataclass
+class ThoughtData:
     thought: str
-    thought_number: int = Field(..., alias="thoughtNumber")
-    total_thoughts: int = Field(..., alias="totalThoughts")
-    next_thought_needed: bool = Field(..., alias="nextThoughtNeeded")
-    is_revision: Optional[bool] = Field(None, alias="isRevision")
-    revises_thought: Optional[int] = Field(None, alias="revisesThought")
-    branch_from_thought: Optional[int] = Field(None, alias="branchFromThought")
-    branch_id: Optional[str] = Field(None, alias="branchId")
-    needs_more_thoughts: Optional[bool] = Field(None, alias="needsMoreThoughts")
-
-    class Config:
-        populate_by_name = True
-
-
-class ToolOutputContent(BaseModel):
-    type: str
-    text: str
-
-class ToolOutput(BaseModel):
-    content: List[ToolOutputContent]
-    is_error: Optional[bool] = False
+    thought_number: int
+    total_thoughts: int
+    next_thought_needed: bool
+    is_revision: Optional[bool] = None
+    revises_thought: Optional[int] = None
+    branch_from_thought: Optional[int] = None
+    branch_id: Optional[str] = None
+    needs_more_thoughts: Optional[bool] = None
 
 
 class SequentialThinkingServer:
     def __init__(self):
-        self.thought_history: List[Dict[str, Any]] = []
-        self.branches: Dict[str, List[Dict[str, Any]]] = {}
+        self.thought_history: List[ThoughtData] = []
+        self.branches: Dict[str, List[ThoughtData]] = {}
         self.disable_thought_logging = DISABLE_THOUGHT_LOGGING
 
-    def _validate_thought_data(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        try:
-            # Pydantic model handles validation
-            validated_model = ThoughtDataInput(**input_data)
-            return validated_model.model_dump(by_alias=True)
-        except ValidationError as e:
-            raise ValueError(f"Invalid input: {e.errors()}")
+    def _validate_thought_data(self, input_data: Dict[str, Any]) -> ThoughtData:
+        data = input_data
 
-    def _format_thought(self, thought_data: Dict[str, Any]) -> str:
-        thought_number = thought_data.get("thoughtNumber", 0)
-        total_thoughts = thought_data.get("totalThoughts", 0)
-        thought_text = thought_data.get("thought", "")
-        is_revision = thought_data.get("isRevision", False)
-        revises_thought = thought_data.get("revisesThought")
-        branch_from_thought = thought_data.get("branchFromThought")
-        branch_id = thought_data.get("branchId")
+        if not data.get("thought") or not isinstance(data["thought"], str):
+            raise ValueError("Invalid thought: must be a string")
+        if not data.get("thoughtNumber") or not isinstance(data["thoughtNumber"], int):
+            raise ValueError("Invalid thoughtNumber: must be a number")
+        if not data.get("totalThoughts") or not isinstance(data["totalThoughts"], int):
+            raise ValueError("Invalid totalThoughts: must be a number")
+        if not isinstance(data.get("nextThoughtNeeded"), bool):
+            raise ValueError("Invalid nextThoughtNeeded: must be a boolean")
+
+        return ThoughtData(
+            thought=data["thought"],
+            thought_number=data["thoughtNumber"],
+            total_thoughts=data["totalThoughts"],
+            next_thought_needed=data["nextThoughtNeeded"],
+            is_revision=data.get("isRevision"),
+            revises_thought=data.get("revisesThought"),
+            branch_from_thought=data.get("branchFromThought"),
+            branch_id=data.get("branchId"),
+            needs_more_thoughts=data.get("needsMoreThoughts"),
+        )
+
+    def _format_thought(self, thought_data: ThoughtData) -> str:
+        thought_number = thought_data.thought_number
+        total_thoughts = thought_data.total_thoughts
+        thought = thought_data.thought
+        is_revision = thought_data.is_revision
+        revises_thought = thought_data.revises_thought
+        branch_from_thought = thought_data.branch_from_thought
+        branch_id = thought_data.branch_id
 
         prefix = ""
         context = ""
@@ -66,80 +80,141 @@ class SequentialThinkingServer:
             context = f" (from thought {branch_from_thought}, ID: {branch_id})"
         else:
             prefix = colored("💭 Thought", "blue")
+            context = ""
 
         header = f"{prefix} {thought_number}/{total_thoughts}{context}"
-        # Ensure thought_text is a string before calling len() or pad_end()
-        thought_text_str = str(thought_text)
-        border_len = max(len(header) - (len(prefix) - len(prefix.encode('utf-8'))), len(thought_text_str)) + 4 # Adjust for escape codes
+        border = "─" * (max(len(header), len(thought)) + 4)
 
-        # Crude way to get visible length of colored string
-        # For more accuracy, a library that handles ANSI escape codes might be needed
-        try:
-            import re
-            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-            header_visible_len = len(ansi_escape.sub('', header))
-            border_len = max(header_visible_len, len(thought_text_str)) + 4
-        except ImportError:
-            pass # Fallback to previous border_len if regex not available or fails
+        return f"""
+┌{border}┐
+│ {header} │
+├{border}┤
+│ {thought.ljust(len(border) - 2)} │
+└{border}┘"""
 
-        border = "─" * border_len
-
-        # Pad header to align with border, considering color codes
-        # This is tricky with ANSI codes, this is a simplification
-        header_padding = border_len - header_visible_len -2
-        padded_header = f"{header}{' ' * header_padding if header_padding > 0 else ''}"
-
-
-        return f"\n┌{border}┐\n│ {padded_header} │\n├{border}┤\n│ {thought_text_str.ljust(border_len -2)} │\n└{border}┘"
-
-    def process_thought(self, input_data: Dict[str, Any]) -> ToolOutput:
+    def process_thought(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             validated_input = self._validate_thought_data(input_data)
 
-            if validated_input["thoughtNumber"] > validated_input["totalThoughts"]:
-                validated_input["totalThoughts"] = validated_input["thoughtNumber"]
+            if validated_input.thought_number > validated_input.total_thoughts:
+                validated_input.total_thoughts = validated_input.thought_number
 
             self.thought_history.append(validated_input)
 
-            if validated_input.get("branchFromThought") and validated_input.get("branchId"):
-                branch_id = validated_input["branchId"]
-                if branch_id not in self.branches:
-                    self.branches[branch_id] = []
-                self.branches[branch_id].append(validated_input)
+            if validated_input.branch_from_thought and validated_input.branch_id:
+                if validated_input.branch_id not in self.branches:
+                    self.branches[validated_input.branch_id] = []
+                self.branches[validated_input.branch_id].append(validated_input)
 
             if not self.disable_thought_logging:
                 formatted_thought = self._format_thought(validated_input)
-                print(formatted_thought, flush=True) # Use print for stderr-like behavior in servers
+                print(formatted_thought, file=sys.stderr, flush=True)
 
-            return ToolOutput(content=[
-                ToolOutputContent(type="text", text=json.dumps(
+            return {
+                "content": [
                     {
-                        "thoughtNumber": validated_input["thoughtNumber"],
-                        "totalThoughts": validated_input["totalThoughts"],
-                        "nextThoughtNeeded": validated_input["nextThoughtNeeded"],
-                        "branches": list(self.branches.keys()),
-                        "thoughtHistoryLength": len(self.thought_history),
-                    },
-                    indent=2
-                ))
-            ])
+                        "type": "text",
+                        "text": json.dumps(
+                            {
+                                "thoughtNumber": validated_input.thought_number,
+                                "totalThoughts": validated_input.total_thoughts,
+                                "nextThoughtNeeded": validated_input.next_thought_needed,
+                                "branches": list(self.branches.keys()),
+                                "thoughtHistoryLength": len(self.thought_history),
+                            },
+                            indent=2
+                        ),
+                    }
+                ]
+            }
         except Exception as error:
-            return ToolOutput(content=[
-                ToolOutputContent(type="text", text=json.dumps(
+            return {
+                "content": [
                     {
-                        "error": str(error),
-                        "status": "failed",
-                    },
-                    indent=2
-                ))
-            ], is_error=True)
+                        "type": "text",
+                        "text": json.dumps(
+                            {
+                                "error": str(error),
+                                "status": "failed",
+                            },
+                            indent=2
+                        ),
+                    }
+                ],
+                "isError": True,
+            }
 
-# Tool Definition (as it was in TypeScript, for reference and use in OpenAI API call)
-SEQUENTIAL_THINKING_TOOL_DEF = {
-    "type": "function",
-    "function": {
-        "name": "sequentialthinking",
-        "description": """A detailed tool for dynamic and reflective problem-solving through thoughts.
+
+# Initialize FastMCP client
+sequential_thinking = FastMCP(name="sequential-thinking-server")
+
+# Global connection state
+is_connected = False
+
+
+async def ensure_mcp_connection():
+    """Ensure MCP server connection is established"""
+    global is_connected
+    
+    if not is_connected:
+        try:
+            # FastMCP doesn't have a connect method, it connects automatically
+            # Just verify we can list tools to test connection
+            await sequential_thinking._mcp_list_tools()
+            is_connected = True
+            print("Connected to MCP server", file=sys.stderr)
+        except Exception as e:
+            print(f"Failed to connect to MCP server: {e}", file=sys.stderr)
+            raise
+
+
+async def get_available_tools() -> List[Dict[str, Any]]:
+    """Get available tools from MCP server"""
+    await ensure_mcp_connection()
+    tools = await sequential_thinking._mcp_list_tools()
+    # Convert Tool objects to dict format
+    return [
+        {
+            "name": tool.name,
+            "description": tool.description,
+            "inputSchema": tool.parameters
+        }
+        for tool in tools
+    ]
+
+
+async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Call a tool on the MCP server"""
+    await ensure_mcp_connection()
+    result = await sequential_thinking._mcp_call_tool(key=name, arguments=arguments)
+    
+    # Handle the result format - it can be a list of ContentBlocks or a tuple
+    if isinstance(result, tuple):
+        content_blocks, structured_output = result
+    else:
+        content_blocks = result
+        structured_output = {}
+    
+    # Convert to the expected format
+    if content_blocks and len(content_blocks) > 0:
+        # Extract text from the first content block
+        first_block = content_blocks[0]
+        if hasattr(first_block, 'text'):
+            text = first_block.text
+        else:
+            text = str(first_block)
+        return {"content": [{"text": text}]}
+    else:
+        return {"content": [{"text": ""}]}
+
+
+# Create server instance
+thinking_server = SequentialThinkingServer()
+
+
+@sequential_thinking.tool(
+    name="sequentialthinking",
+    description="""A detailed tool for dynamic and reflective problem-solving through thoughts.
 This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
 Each thought can build on, question, or revise previous insights as understanding deepens.
 
@@ -193,101 +268,50 @@ You should:
 9. Repeat the process until satisfied with the solution
 10. Provide a single, ideally correct answer as the final output
 11. Only set next_thought_needed to false when truly done and a satisfactory answer is reached""",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "thought": {"type": "string", "description": "Your current thinking step"},
-                "nextThoughtNeeded": {"type": "boolean", "description": "Whether another thought step is needed"},
-                "thoughtNumber": {"type": "integer", "description": "Current thought number", "minimum": 1},
-                "totalThoughts": {"type": "integer", "description": "Estimated total thoughts needed", "minimum": 1},
-                "isRevision": {"type": "boolean", "description": "Whether this revises previous thinking"},
-                "revisesThought": {"type": "integer", "description": "Which thought is being reconsidered", "minimum": 1},
-                "branchFromThought": {"type": "integer", "description": "Branching point thought number", "minimum": 1},
-                "branchId": {"type": "string", "description": "Branch identifier"},
-                "needsMoreThoughts": {"type": "boolean", "description": "If more thoughts are needed"},
-            },
-            "required": ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"],
-        },
+    annotations={
+        "thought": "Your current thinking step",
+        "nextThoughtNeeded": "Whether another thought step is needed",
+        "thoughtNumber": "Current thought number",
+        "totalThoughts": "Estimated total thoughts needed",
+        "isRevision": "Whether this revises previous thinking",
+        "revisesThought": "Which thought is being reconsidered",
+        "branchFromThought": "Branching point thought number",
+        "branchId": "Branch identifier",
+        "needsMoreThoughts": "If more thoughts are needed",
     }
-}
+)
+async def sequential_thinking_tool(
+    thought: str,
+    nextThoughtNeeded: bool,
+    thoughtNumber: int,
+    totalThoughts: int,
+    isRevision: Optional[bool] = None,
+    revisesThought: Optional[int] = None,
+    branchFromThought: Optional[int] = None,
+    branchId: Optional[str] = None,
+    needsMoreThoughts: Optional[bool] = None,
+) -> str:
+    """Sequential thinking tool - exact equivalent of TypeScript version"""
+    input_data = {
+        "thought": thought,
+        "nextThoughtNeeded": nextThoughtNeeded,
+        "thoughtNumber": thoughtNumber,
+        "totalThoughts": totalThoughts,
+        "isRevision": isRevision,
+        "revisesThought": revisesThought,
+        "branchFromThought": branchFromThought,
+        "branchId": branchId,
+        "needsMoreThoughts": needsMoreThoughts,
+    }
+    
+    result = thinking_server.process_thought(input_data)
+    
+    if result.get("isError"):
+        return result["content"][0]["text"]
+    
+    return result["content"][0]["text"]
 
-
-# FastAPI Router
-router = APIRouter()
-thinking_server_instance = SequentialThinkingServer()
-
-class CallToolRequest(BaseModel):
-    # Mimicking structure from CallToolRequestSchema in TS
-    # name: str # This will be part of the path
-    arguments: Dict[str, Any]
-
-
-@router.post("/call_tool/{tool_name}")
-async def call_tool(tool_name: str, request: CallToolRequest) -> ToolOutput:
-    if tool_name == "sequentialthinking":
-        return thinking_server_instance.process_thought(request.arguments)
-    else:
-        raise HTTPException(status_code=404, detail=f"Unknown tool: {tool_name}")
-
-# This function is for providing the tool definition to the OpenAI client part
-def list_tools() -> List[Dict[str, Any]]:
-    return [SEQUENTIAL_THINKING_TOOL_DEF]
 
 if __name__ == "__main__":
-    # Example usage for testing the server logic directly
-    server = SequentialThinkingServer()
-    test_thought_1 = {
-        "thought": "This is my first thought.",
-        "thoughtNumber": 1,
-        "totalThoughts": 3,
-        "nextThoughtNeeded": True
-    }
-    print("Processing test_thought_1:")
-    output1 = server.process_thought(test_thought_1)
-    print(output1.model_dump_json(indent=2))
-
-    test_thought_2_revises = {
-        "thought": "Actually, let me revise my first thought.",
-        "thoughtNumber": 2,
-        "totalThoughts": 3,
-        "nextThoughtNeeded": True,
-        "isRevision": True,
-        "revisesThought": 1
-    }
-    print("\nProcessing test_thought_2_revises:")
-    output2 = server.process_thought(test_thought_2_revises)
-    print(output2.model_dump_json(indent=2))
-
-    test_thought_3_branch = {
-        "thought": "Let's explore a different path from thought 1.",
-        "thoughtNumber": 3, # This might be thought 1 on a new branch logically
-        "totalThoughts": 3, # Or total thoughts for this branch
-        "nextThoughtNeeded": True,
-        "branchFromThought": 1,
-        "branchId": "branch_A"
-    }
-    print("\nProcessing test_thought_3_branch:")
-    output3 = server.process_thought(test_thought_3_branch)
-    print(output3.model_dump_json(indent=2))
-
-    print("\nFinal thought history:")
-    for item in server.thought_history:
-        print(item)
-    print("\nFinal branches:")
-    for branch_id, thoughts in server.branches.items():
-        print(f"Branch {branch_id}: {thoughts}")
-
-    # Test validation error
-    test_invalid_thought = {
-        "thought": "This is invalid.",
-        # "thoughtNumber": 1, # Missing required field
-        "totalThoughts": 1,
-        "nextThoughtNeeded": True
-    }
-    print("\nProcessing invalid thought:")
-    output_invalid = server.process_thought(test_invalid_thought)
-    print(output_invalid.model_dump_json(indent=2))
-
-    # To run this file directly for testing: python examples/sequential-thinking-python/app/mcp_server.py
-    # To run with Uvicorn (once server.py is created): uvicorn server:app --reload --port 8000
-    print(colored("\nTo run the FastAPI server, create server.py and run: uvicorn server:app --reload --port 8000", "cyan"))
+    # Run the FastMCP server
+    sequential_thinking.run() 
