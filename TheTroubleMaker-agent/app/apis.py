@@ -141,8 +141,22 @@ async def handle_request(request: ChatCompletionRequest) -> AsyncGenerator[ChatC
             _args = json.loads(_args)
 
             logger.info(f"Executing tool call: {_name} with args: {_args}")
+            
+            # Debug: Print before tool call execution
+#            logger.info(f"🔍 [DEBUG] About to execute tool call: {_name}")
+            
             _result = await execute_openai_compatible_toolcall(_name, _args, compose_mcp)
+            
+            # Debug: Print the raw result immediately after execution
+#            logger.info(f"🔍 [DEBUG] Raw result from tool call {_name}:")
+#            logger.info(f"🔍 [DEBUG]   - Type: {type(_result).__name__}")
+#            logger.info(f"🔍 [DEBUG]   - Value: {repr(_result)}")
+#            logger.info(f"🔍 [DEBUG]   - Length: {len(_result) if hasattr(_result, '__len__') else 'N/A'}")
+            
             #logger.info(f"Tool call {_name} result: {_result}")
+            
+            # Debug: Print after the result is logged
+#            logger.info(f"🔍 [DEBUG] Result has been logged, about to refine and add to messages")
 
             messages.append(
                 {

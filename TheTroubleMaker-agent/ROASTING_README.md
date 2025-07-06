@@ -1,0 +1,160 @@
+# 🔥 TroubleMaker Agent - Roasting Functionality
+
+The TroubleMaker agent now includes **hilarious roasting capabilities** that use sequential thinking to analyze your data breach findings and craft personalized, witty roasts! 
+
+## 🎭 Roast Styles Available
+
+### 1. **Friendly** 🌟
+- Gentle, light-hearted teasing
+- Perfect for users who want a soft approach
+- Example: "Hey there, digital footprint enthusiast! I found your email in 5 different data breaches. That's like being the most popular kid at the 'Oops, my data got leaked' party!"
+
+### 2. **Savage** 🔥
+- Brutal honesty with maximum impact
+- For users who can handle the truth
+- Example: "OH MY DIGITAL GODS! Your email has been in 8 data breaches! You're like a digital version of that friend who always forgets their keys, but instead of keys, it's your entire online identity!"
+
+### 3. **Dad Jokes** 👨‍👧‍👦
+- Corny, wholesome humor
+- Classic dad joke energy
+- Example: "Hey kiddo! I found your email in 3 data breaches. You know what that means? You're like a digital version of that dad who tells the same joke at every family gathering!"
+
+### 4. **Tech Nerd** 🤓
+- Technical deep cuts and programming humor
+- For the developers and IT professionals
+- Example: "*adjusts glasses* TECHNICAL ANALYSIS COMPLETE: Your email has been compromised in 6 separate security incidents. Your digital footprint is like a recursive function that keeps calling itself!"
+
+### 5. **Random** 🎭
+- Chaotic, unpredictable energy
+- Maximum entertainment value
+- Example: "*dramatic gasp* Your email has been in 4 data breaches! That's like being the main character in a cybersecurity soap opera!"
+
+## 🛠️ How to Use
+
+### Automatic Roasting (NEW!)
+The TroubleMaker agent now **automatically roasts users** after completing OSINT data collection! When you ask about data leaks, the agent will:
+
+1. **Search for your data breaches** using OSINT tools
+2. **Analyze the findings** and determine roast severity
+3. **Generate a personalized roast** based on breach count and data types
+4. **Include the roast** in the security report automatically
+
+**No need to ask for roasting - it happens automatically!** 🎭
+
+### Manual Roasting
+You can also request specific roast styles:
+
+```
+"Roast me based on my data breaches!"
+"Give me a savage roast of my digital footprint"
+"Hit me with some dad jokes about my data leaks"
+```
+
+### Direct Tool Usage
+The agent can use the `roast_user_with_sequential_thinking` tool with parameters:
+
+- `email`: Your email address to search
+- `roast_style`: One of the 5 styles above
+- `include_location`: Whether to include location-based roasting (default: true)
+
+## 🔍 What Gets Roasted
+
+The roasting system analyzes:
+
+1. **Number of data breaches** - How many times your data has been exposed
+2. **Types of databases** - Which services had your information
+3. **Location data** - Where your digital footprint spans
+4. **Exposed information** - What specific data was leaked
+5. **Patterns** - Your digital behavior patterns
+
+## 🎯 Sequential Thinking Integration
+
+The roasting process can use the `sequential_thinking_sequentialthinking` tool for complex analysis:
+
+- **Dynamic thought generation**: The LLM generates thoughts step by step
+- **Adaptive analysis**: Thoughts can be revised or branched as needed
+- **Systematic approach**: Each thought builds on previous insights
+- **Flexible process**: Can adjust total thoughts needed as analysis progresses
+
+The sequential thinking tool allows the agent to:
+- Break down complex roasting tasks into manageable steps
+- Revise previous thoughts as new information emerges
+- Branch into alternative analysis paths when needed
+- Generate personalized roasts based on systematic analysis
+
+## 🤖 Automatic Roasting Logic
+
+The agent automatically determines roast style based on breach severity:
+
+- **0-2 breaches**: Friendly roasting 🌟
+- **3-5 breaches**: Dad jokes 👨‍👧‍👦
+- **6-10 breaches**: Tech nerd humor 🤓
+- **10+ breaches**: Savage roasting 🔥
+
+The system also includes:
+- **Location-based roasting** when geographic data is available
+- **Personalized content** based on specific data types found
+- **Security advice** after each roast
+- **Batch roasting** for multiple email searches
+
+## 🛡️ Security First
+
+While the roasts are hilarious, they also:
+- Inform you about your actual data exposure
+- Provide actionable security advice
+- Encourage better password practices
+- Suggest enabling two-factor authentication
+
+## 🧪 Testing
+
+Run the test script to see the roasting in action:
+
+```bash
+python test_roasting.py
+```
+
+## 🎪 Example Sessions
+
+### Automatic Roasting Example
+
+**User**: "Check my email for data breaches"
+
+**TroubleMaker**: 
+```
+🔍 OSINT SEARCH RESULTS:
+• Found in 8 databases
+• Total results: 47
+• Exposed passwords: 3
+• Compromised nicknames: 2
+
+🔥 AUTOMATIC ROAST:
+OH MY DIGITAL GODS! Your email has been in 8 data breaches! You're like a digital version of that friend who always forgets their keys, but instead of keys, it's your entire online identity! Your data has been passed around more than a hot potato at a cybersecurity conference.
+
+🌍 And get this - your digital trail spans across 3 different locations: New York, London, Tokyo! You're like a digital nomad, except instead of working remotely, you're just leaving your data everywhere!
+
+💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐
+```
+
+### Manual Roasting Example
+
+**User**: "Roast me based on my email!"
+
+**TroubleMaker**: 
+```
+🎭 *dramatic gasp* Your email has been in 7 data breaches! That's like being the main character in a cybersecurity soap opera! Your personal information has been on more adventures than a backpacking tourist in Europe! 
+
+🌍 And get this - your digital trail spans across 3 different locations: New York, London, Tokyo! You're like a digital nomad, except instead of working remotely, you're just leaving your data everywhere!
+
+💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐
+```
+
+## 🚀 Getting Started
+
+1. Make sure the TroubleMaker agent is running
+2. Ask it to roast you based on your data
+3. Choose your preferred roast style
+4. Enjoy the hilarious results while learning about your digital security!
+
+---
+
+*Remember: The best roasts come from real data! The more breaches you've been in, the more material we have to work with! 😄* 
