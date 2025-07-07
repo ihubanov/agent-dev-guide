@@ -728,22 +728,22 @@ async def _calculate_complexity_impl(query: str, limit: int = 100) -> dict:
     }
 )
 async def search_leak(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
-    print(f"\n🔧 [TOOLKIT DEBUG] search_leak decorated function called")
-    print(f"🔧 [TOOLKIT DEBUG] Parameters: request='{request}', limit={limit}, lang='{lang}', report_type='{report_type}'")
+    #print(f"\n🔧 [TOOLKIT DEBUG] search_leak decorated function called")
+    #print(f"🔧 [TOOLKIT DEBUG] Parameters: request='{request}', limit={limit}, lang='{lang}', report_type='{report_type}'")
     
     summary = await _search_leak_impl(request, limit, lang, report_type)
-    print(f"🔧 [TOOLKIT DEBUG] _search_leak_impl returned: type={type(summary).__name__}, length={len(summary)}")
+    #print(f"🔧 [TOOLKIT DEBUG] _search_leak_impl returned: type={type(summary).__name__}, length={len(summary)}")
     
-    print(f"🔧 [TOOLKIT DEBUG] About to return simple string to framework")
-    print(f"🔧 [TOOLKIT DEBUG] String length: {len(summary)}")
-    print(f"🔧 [TOOLKIT DEBUG] String preview: {repr(summary[:200])}")
+    #print(f"🔧 [TOOLKIT DEBUG] About to return simple string to framework")
+    #print(f"🔧 [TOOLKIT DEBUG] String length: {len(summary)}")
+    #print(f"🔧 [TOOLKIT DEBUG] String preview: {repr(summary[:200])}")
     
     try:
-        print(f"🔧 [TOOLKIT DEBUG] Returning simple string to framework...")
+        #print(f"🔧 [TOOLKIT DEBUG] Returning simple string to framework...")
         return summary
     except Exception as e:
-        print(f"❌ [TOOLKIT DEBUG] Exception when returning string: {str(e)}")
-        print(f"❌ [TOOLKIT DEBUG] Exception type: {type(e).__name__}")
+        #print(f"❌ [TOOLKIT DEBUG] Exception when returning string: {str(e)}")
+        #print(f"❌ [TOOLKIT DEBUG] Exception type: {type(e).__name__}")
         raise
 
 @leakosint_toolkit.tool(
@@ -1000,53 +1000,50 @@ compose.mount(sequential_thinking_toolkit, prefix="sequential_thinking")
     }
 )
 async def roast_user_with_sequential_thinking(email: str, roast_style: str = "friendly", include_location: bool = True) -> str:
-    """Roast the user based on their data breach findings using sequential thinking"""
-    
-    # First, search for the user's data breaches
+    """Roast the user based on their data breach findings using sequential thinking, using the LLM for creativity."""
     breach_data = await _search_leak_impl(email, 100, "en", "json")
-    
-    # Parse the breach data
     try:
         breach_json = json.loads(breach_data)
     except:
         return "Sorry, couldn't find any juicy data to roast you with! Maybe you're actually good at keeping secrets? 🤔"
-    
-    # Generate roast content based on breach data
     breach_count = len(breach_json.get('List', {}))
-    databases = list(breach_json.get('List', {}).keys())
-    
-    # Generate the actual roast based on the analysis
-    breach_count = len(breach_json.get('List', {}))
-    databases = list(breach_json.get('List', {}).keys())
-    
-    if roast_style == "friendly":
-        roast = f"Hey there, digital footprint enthusiast! 🌟 I found your email in {breach_count} different data breaches. That's like being the most popular kid at the 'Oops, my data got leaked' party! Your info has been on more databases than a library catalog. But hey, at least you're consistent - you really know how to make an impression across the internet! 😄"
-    
-    elif roast_style == "savage":
-        roast = f"OH MY DIGITAL GODS! 🔥 Your email has been in {breach_count} data breaches! You're like a digital version of that friend who always forgets their keys, but instead of keys, it's your entire online identity! Your data has been passed around more than a hot potato at a cybersecurity conference. At this point, hackers probably have your information on speed dial! 💀"
-    
-    elif roast_style == "dad_jokes":
-        roast = f"Hey kiddo! 👨‍👧‍👦 I found your email in {breach_count} data breaches. You know what that means? You're like a digital version of that dad who tells the same joke at every family gathering - except instead of jokes, it's your personal information that keeps getting repeated! Why did the cybersecurity expert cross the road? To get away from your data breach history! 😂"
-    
-    elif roast_style == "tech_nerd":
-        roast = f"*adjusts glasses* 🤓 TECHNICAL ANALYSIS COMPLETE: Your email has been compromised in {breach_count} separate security incidents. Your digital footprint is like a recursive function that keeps calling itself with increasingly embarrassing parameters. Your data has been exposed more times than a JavaScript variable in the global scope! The entropy of your personal information is approaching maximum chaos! ⚡"
-    
-    else:  # random
-        roast = f"🎭 *dramatic gasp* Your email has been in {breach_count} data breaches! That's like being the main character in a cybersecurity soap opera! Your personal information has been on more adventures than a backpacking tourist in Europe! At this point, your data probably has its own frequent flyer miles! ✈️ Maybe we should start a support group: 'Data Breach Survivors Anonymous' - you'd be the president! 🏆"
-    
-    # Add location-based roasting if requested
+    # Compose the roast prompt
+    prompt = f"Write a {roast_style} roast for a user who has been in {breach_count} data breaches. Make it funny, original, and creative."
     if include_location:
         try:
             location_data = await _extract_location_data(breach_json)
             if location_data.get("cities") or location_data.get("countries"):
                 locations = location_data.get("cities", []) + location_data.get("countries", [])
                 if locations:
-                    unique_locations = list(set(locations))[:3]  # Top 3 unique locations
-                    roast += f"\n\n🌍 And get this - your digital trail spans across {len(unique_locations)} different locations: {', '.join(unique_locations)}! You're like a digital nomad, except instead of working remotely, you're just leaving your data everywhere! 🗺️"
+                    unique_locations = list(set(locations))[:3]
+                    prompt += f" Their digital trail spans {len(unique_locations)} locations: {', '.join(unique_locations)}."
         except:
-            pass  # Skip location roasting if it fails
-    
-    return f"{roast}\n\n💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐"
+            pass
+    prompt += " End with a light security tip."
+    roast = await generate_roast_with_llm(prompt, temperature=settings.llm_temperature)
+    return roast
+
+async def generate_roast_with_llm(prompt: str, temperature: float = 0.8) -> str:
+    """Call the LLM to generate a roast with the given prompt and temperature."""
+    url = settings.llm_base_url + "/chat/completions"
+    headers = {"Authorization": f"Bearer {settings.llm_api_key}", "Content-Type": "application/json"}
+    payload = {
+        "model": settings.llm_model_id,
+        "messages": [
+            {"role": "system", "content": "You are a witty, creative, and funny AI roast master."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": temperature,
+        "max_tokens": 256
+    }
+    print(f"[DEBUG] LLM roast prompt: {prompt}")
+    print(f"[DEBUG] LLM temperature: {temperature}")
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        # OpenAI-style response
+        return data["choices"][0]["message"]["content"].strip()
 
 @compose.tool(
     name="leakosint_search_leak_direct",

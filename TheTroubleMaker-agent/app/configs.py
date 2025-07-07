@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     llm_api_key: str = Field(alias="LLM_API_KEY", default="super-secret")
     llm_base_url: str = Field(alias="LLM_BASE_URL", default="http://local-model:65534")
     llm_model_id: str = Field(alias="LLM_MODEL_ID", default="local-model")
+    llm_temperature: float = Field(alias="LLM_TEMPERATURE", default=0.8)
 
     # OSINT Search Service (REQUIRED)
     leakosint_api_key: str = Field(alias="LEAKOSINT_API_KEY", default="")

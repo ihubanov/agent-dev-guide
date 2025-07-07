@@ -39,23 +39,6 @@ The agent includes specialized tools for searching data leaks:
 - Parameters: requests (list), limit, lang, type
 - Efficient for searching multiple items
 
-### API Cost Calculation
-
-The OSINT search service uses the following pricing formula:
-```
-Cost = (5 + sqrt(Limit * Complexity)) / 5000 USD
-```
-
-Where:
-- **Limit**: Search limit (100-10000)
-- **Complexity**: Based on word count:
-  - 1 word: Complexity = 1
-  - 2 words: Complexity = 5
-  - 3 words: Complexity = 16
-  - 4+ words: Complexity = 40
-
-**Note**: Dates, lines shorter than 4 characters, and numbers shorter than 6 characters are excluded from complexity calculation.
-
 ### Other Stuff
 
 To customize the agent system prompt or personality, just modify the `system_prompt.txt` file. The current system prompt instructs the agent to:
@@ -93,13 +76,7 @@ Python 3.10+ is recommended.
 
    **Note**: The `LEAKOSINT_API_KEY` is **REQUIRED** for the OSINT search functionality. Users do not need to provide any API keys - the service is configured transparently by the administrator.
 
-3. **Test Individual Components**
-   - Use `debug.py` to test Python code parsing and AST analysis
-   - Use `test.py` to test streaming responses and concurrent requests
-   - Use `test_leakosint.py` to test OSINT search functionality
-   - Check tool functionality by importing and calling tools directly
-
-4. **Monitor Logs**
+3. **Monitor Logs**
    The application logs important events including:
    - Request processing times (TTFT, TPS)
    - Tool call executions and results
