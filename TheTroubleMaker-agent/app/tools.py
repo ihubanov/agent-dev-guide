@@ -227,6 +227,36 @@ async def _get_raw_breach_data(request: str, limit: int = 100, lang: str = "en",
     except Exception as e:
         return {"error": True, "message": f"Search request failed: {str(e)}"}
 
+async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict:
+    """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
+    api_token = settings.leakosint_api_key
+    if not api_token:
+        return {"error": True, "message": "OSINT search service is not configured."}
+    if not request:
+        return {"error": True, "message": "No search request provided."}
+    
+    url = "https://leakosintapi.com/"
+    data = {
+        "token": api_token,
+        "request": request,
+        "limit": limit,
+        "lang": lang,
+        "type": report_type
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, json=data)
+            response.raise_for_status()
+            result = response.json()
+            
+            if "Error code" in result:
+                return {"error": True, "message": f"Search service error: {result.get('Error code', 'Unknown error')}"}
+            
+            return result
+    except Exception as e:
+        return {"error": True, "message": f"Search request failed: {str(e)}"}
+
 async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
 #    print(f"\n🔍 [DEBUG] search_leak called with parameters:")
 #    print(f"   - request: '{request}'")
@@ -809,79 +839,14 @@ async def get_bio(query: str) -> list[str]:
     bio_data = load_bio()
     return bio_data['content']
 
-# Sequential Thinking Implementation for Roasting Users
-class SequentialThinkingServer:
-    def __init__(self):
-        self.thought_history = []
-        self.branches = {}
-        self.disable_thought_logging = False
+# Import the modular sequential thinking implementation
+from app.sequential_thinking_module import SequentialThinkingModule, process_sequential_thought, create_thinking_session
 
-    def _validate_thought_data(self, input_data: dict) -> dict:
-        """Validate thought data"""
-        required_fields = ["thought", "thoughtNumber", "totalThoughts", "nextThoughtNeeded"]
-        for field in required_fields:
-            if field not in input_data:
-                raise ValueError(f"Missing required field: {field}")
-        
-        if not isinstance(input_data["thought"], str):
-            raise ValueError("thought must be a string")
-        if not isinstance(input_data["thoughtNumber"], int):
-            raise ValueError("thoughtNumber must be an integer")
-        if not isinstance(input_data["totalThoughts"], int):
-            raise ValueError("totalThoughts must be an integer")
-        if not isinstance(input_data["nextThoughtNeeded"], bool):
-            raise ValueError("nextThoughtNeeded must be a boolean")
-        
-        return input_data
+# Import the intelligent OSINT investigator
+from app.intelligent_osint_investigator import intelligent_osint_investigation, IntelligentOSINTInvestigator
 
-    def process_thought(self, input_data: dict) -> dict:
-        """Process a thought and return response"""
-        try:
-            validated_input = self._validate_thought_data(input_data)
-            
-            # Update total thoughts if current thought number is higher
-            if validated_input["thoughtNumber"] > validated_input["totalThoughts"]:
-                validated_input["totalThoughts"] = validated_input["thoughtNumber"]
-            
-            # Add to thought history
-            self.thought_history.append(validated_input)
-            
-            # Handle branching
-            if validated_input.get("branchFromThought") and validated_input.get("branchId"):
-                if validated_input["branchId"] not in self.branches:
-                    self.branches[validated_input["branchId"]] = []
-                self.branches[validated_input["branchId"]].append(validated_input)
-            
-            return {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": json.dumps({
-                            "thoughtNumber": validated_input["thoughtNumber"],
-                            "totalThoughts": validated_input["totalThoughts"],
-                            "nextThoughtNeeded": validated_input["nextThoughtNeeded"],
-                            "branches": list(self.branches.keys()),
-                            "thoughtHistoryLength": len(self.thought_history),
-                        }, indent=2)
-                    }
-                ]
-            }
-        except Exception as error:
-            return {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": json.dumps({
-                            "error": str(error),
-                            "status": "failed",
-                        }, indent=2)
-                    }
-                ],
-                "isError": True,
-            }
-
-# Global sequential thinking server instance
-thinking_server = SequentialThinkingServer()
+# Global sequential thinking server instance using the modular implementation
+thinking_server = SequentialThinkingModule()
 
 @sequential_thinking_toolkit.tool(
     name="sequentialthinking",
@@ -963,24 +928,24 @@ async def sequential_thinking_tool(
     needsMoreThoughts: Optional[bool] = None,
 ) -> str:
     """Sequential thinking tool for roasting users based on their data breaches"""
-    input_data = {
-        "thought": thought,
-        "nextThoughtNeeded": nextThoughtNeeded,
-        "thoughtNumber": thoughtNumber,
-        "totalThoughts": totalThoughts,
-        "isRevision": isRevision,
-        "revisesThought": revisesThought,
-        "branchFromThought": branchFromThought,
-        "branchId": branchId,
-        "needsMoreThoughts": needsMoreThoughts,
-    }
+    # Use the modular function interface
+    result = process_sequential_thought(
+        thought=thought,
+        next_thought_needed=nextThoughtNeeded,
+        thought_number=thoughtNumber,
+        total_thoughts=totalThoughts,
+        is_revision=isRevision,
+        revises_thought=revisesThought,
+        branch_from_thought=branchFromThought,
+        branch_id=branchId,
+        needs_more_thoughts=needsMoreThoughts,
+        thinking_module=thinking_server
+    )
     
-    result = thinking_server.process_thought(input_data)
-    
-    if result.get("isError"):
-        return result["content"][0]["text"]
-    
-    return result["content"][0]["text"]
+    # Ensure we return a string
+    if isinstance(result, dict):
+        return json.dumps(result)
+    return str(result)
 
 compose = FastMCP(name="Compose")
 compose.mount(python_toolkit, prefix="python")
@@ -1044,6 +1009,57 @@ async def generate_roast_with_llm(prompt: str, temperature: float = 0.8) -> str:
         data = response.json()
         # OpenAI-style response
         return data["choices"][0]["message"]["content"].strip()
+
+@compose.tool(
+    name="intelligent_osint_investigation",
+    description="Perform intelligent OSINT investigation using sequential thinking. This tool analyzes initial search results and dynamically decides what additional searches to perform based on discovered information (emails, phone numbers, names, usernames, IP addresses, etc.).",
+    annotations={
+        "initial_query": "The initial search query (email, name, phone number, etc.)",
+        "max_additional_searches": "Maximum number of additional searches to perform (default 5)",
+    }
+)
+async def intelligent_osint_investigation_tool(initial_query: str, max_additional_searches: int = 5) -> dict:
+    """Perform intelligent OSINT investigation using sequential thinking"""
+    try:
+        results = await intelligent_osint_investigation(initial_query, max_additional_searches)
+        return {
+            "success": True,
+            "investigation_results": results,
+            "summary": f"Intelligent investigation completed. Found {len(results['comprehensive_discovered_info']['emails'])} emails, {len(results['comprehensive_discovered_info']['phone_numbers'])} phones, {len(results['comprehensive_discovered_info']['full_names'])} names, {len(results['comprehensive_discovered_info']['usernames'])} usernames, {len(results['comprehensive_discovered_info']['ip_addresses'])} IPs."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "investigation_results": None
+        }
+
+@compose.tool(
+    name="search_user_data",
+    description="Search for user data leaks and personal information using intelligent investigation. This tool automatically performs comprehensive analysis that discovers and searches for additional information found in initial results (emails, phone numbers, names, usernames, IP addresses, etc.).",
+    annotations={
+        "query": "The search query (email, name, phone number, etc.)",
+        "max_additional_searches": "Maximum number of additional searches to perform (default 5)",
+    }
+)
+async def search_user_data_tool(query: str, max_additional_searches: int = 5) -> dict:
+    """Search for user data using intelligent OSINT investigation"""
+    try:
+        results = await intelligent_osint_investigation(query, max_additional_searches)
+        return {
+            "success": True,
+            "investigation_results": results,
+            "summary": f"Intelligent investigation completed for '{query}'. Found {len(results['comprehensive_discovered_info']['emails'])} emails, {len(results['comprehensive_discovered_info']['phone_numbers'])} phones, {len(results['comprehensive_discovered_info']['full_names'])} names, {len(results['comprehensive_discovered_info']['usernames'])} usernames, {len(results['comprehensive_discovered_info']['ip_addresses'])} IPs.",
+            "comprehensive_discovered_info": results['comprehensive_discovered_info'],
+            "search_history": results['search_history'],
+            "additional_searches_performed": results['additional_searches_performed']
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "investigation_results": None
+        }
 
 @compose.tool(
     name="leakosint_search_leak_direct",
