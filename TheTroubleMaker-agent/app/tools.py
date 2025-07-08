@@ -838,8 +838,8 @@ async def batch_search_leak(requests: list[str], limit: int = 100, lang: str = "
 async def calculate_complexity(query: str, limit: int = 100) -> dict:
     return await _calculate_complexity_impl(query, limit)
 
-# import os # Unused import, os is already imported above
-# import json # Unused import, json is already imported above
+# import os # Unused import
+# import json # Unused import
 
 def load_bio() -> dict:
     if not os.path.exists("bio.json"):
@@ -1212,7 +1212,7 @@ async def search_leak_direct(request: str, limit: int = 100, lang: str = "en", r
         }
 
 # --- Location extraction and analysis functions ---
-# import re # Unused import, re is already imported above
+# import re # Unused import
 from typing import Dict, List, Optional, Tuple
 
 async def _geolocate_ip(ip: str) -> dict:
@@ -1343,112 +1343,112 @@ async def _analyze_location_data(location_data: dict) -> dict:
 #     """Format location information into dramatic report"""
 #     # Check if we actually have any location data
 #     has_location_data = (
-        location_data.get("ip_details") or 
-        location_data.get("ips") or 
-        location_data.get("addresses") or 
-        location_data.get("cities") or 
-        location_data.get("countries")
-    )
+#         location_data.get("ip_details") or
+#         location_data.get("ips") or
+#         location_data.get("addresses") or
+#         location_data.get("cities") or
+#         location_data.get("countries")
+#     )
     
-    if not has_location_data:
-        # Be honest when no location data is found
-        return "\n🌍 LOCATION ANALYSIS 🌍\n" + \
-               "I searched through the breach data for location information...\n\n" + \
-               "🔍 RESULT: No location data found in the breaches.\n" + \
-               "   • No IP addresses were exposed\n" + \
-               "   • No physical addresses were found\n" + \
-               "   • No geographic information was available\n\n" + \
-               "🌍 LOCATION STATUS: CLEAN - No location data exposed\n\n"
+#     if not has_location_data:
+#         # Be honest when no location data is found
+#         return "\n🌍 LOCATION ANALYSIS 🌍\n" + \
+#                "I searched through the breach data for location information...\n\n" + \
+#                "🔍 RESULT: No location data found in the breaches.\n" + \
+#                "   • No IP addresses were exposed\n" + \
+#                "   • No physical addresses were found\n" + \
+#                "   • No geographic information was available\n\n" + \
+#                "🌍 LOCATION STATUS: CLEAN - No location data exposed\n\n"
     
-    # If we have location data, show the detailed report
-    report = "\n🌍 YOUR LOCATION SECRETS REVEALED 🌍\n"
-    report += "I traced your digital footprints across the globe...\n\n"
+#     # If we have location data, show the detailed report
+#     report = "\n🌍 YOUR LOCATION SECRETS REVEALED 🌍\n"
+#     report += "I traced your digital footprints across the globe...\n\n"
     
-    # Detailed IP Geolocation
-    if location_data.get("ip_details"):
-        report += "🔍 SHADOW IP ADDRESSES WITH LOCATIONS:\n"
-        for ip_detail in location_data["ip_details"][:5]:  # Limit to first 5
-            ip = ip_detail.get("ip", "Unknown")
-            city = ip_detail.get("city", "Unknown")
-            region = ip_detail.get("region", "Unknown")
-            country = ip_detail.get("country", "Unknown")
-            isp = ip_detail.get("isp", "Unknown")
-            lat = ip_detail.get("latitude", "Unknown")
-            lon = ip_detail.get("longitude", "Unknown")
-            timezone = ip_detail.get("timezone", "Unknown")
-            report += (
-                f"   • {ip} 🌐\n"
-                f"      - City: {city}\n"
-                f"      - Region: {region}\n"
-                f"      - Country: {country}\n"
-                f"      - ISP: {isp}\n"
-                f"      - Coordinates: {lat}, {lon}\n"
-                f"      - Timezone: {timezone}\n"
-            )
-        if len(location_data["ip_details"]) > 5:
-            report += f"   • ... and {len(location_data['ip_details']) - 5} more geolocated IPs\n"
-        report += "\n"
-    elif location_data.get("ips"):
-        report += "🔍 SHADOW IP ADDRESSES:\n"
-        for ip in location_data["ips"][:5]:  # Limit to first 5
-            report += f"   • {ip} 🌐\n"
-        if len(location_data["ips"]) > 5:
-            report += f"   • ... and {len(location_data['ips']) - 5} more shadow IPs\n"
-        report += "\n"
+#     # Detailed IP Geolocation
+#     if location_data.get("ip_details"):
+#         report += "🔍 SHADOW IP ADDRESSES WITH LOCATIONS:\n"
+#         for ip_detail in location_data["ip_details"][:5]:  # Limit to first 5
+#             ip = ip_detail.get("ip", "Unknown")
+#             city = ip_detail.get("city", "Unknown")
+#             region = ip_detail.get("region", "Unknown")
+#             country = ip_detail.get("country", "Unknown")
+#             isp = ip_detail.get("isp", "Unknown")
+#             lat = ip_detail.get("latitude", "Unknown")
+#             lon = ip_detail.get("longitude", "Unknown")
+#             timezone = ip_detail.get("timezone", "Unknown")
+#             report += (
+#                 f"   • {ip} 🌐\n"
+#                 f"      - City: {city}\n"
+#                 f"      - Region: {region}\n"
+#                 f"      - Country: {country}\n"
+#                 f"      - ISP: {isp}\n"
+#                 f"      - Coordinates: {lat}, {lon}\n"
+#                 f"      - Timezone: {timezone}\n"
+#             )
+#         if len(location_data["ip_details"]) > 5:
+#             report += f"   • ... and {len(location_data['ip_details']) - 5} more geolocated IPs\n"
+#         report += "\n"
+#     elif location_data.get("ips"):
+#         report += "🔍 SHADOW IP ADDRESSES:\n"
+#         for ip in location_data["ips"][:5]:  # Limit to first 5
+#             report += f"   • {ip} 🌐\n"
+#         if len(location_data["ips"]) > 5:
+#             report += f"   • ... and {len(location_data['ips']) - 5} more shadow IPs\n"
+#         report += "\n"
     
-    # Physical Addresses
-    if location_data.get("addresses"):
-        report += "🏠 FORBIDDEN ADDRESSES:\n"
-        for addr in location_data["addresses"][:3]:  # Limit to first 3
-            report += f"   • {addr} 🏠\n"
-        if len(location_data["addresses"]) > 3:
-            report += f"   • ... and {len(location_data['addresses']) - 3} more locations\n"
-        report += "\n"
+#     # Physical Addresses
+#     if location_data.get("addresses"):
+#         report += "🏠 FORBIDDEN ADDRESSES:\n"
+#         for addr in location_data["addresses"][:3]:  # Limit to first 3
+#             report += f"   • {addr} 🏠\n"
+#         if len(location_data["addresses"]) > 3:
+#             report += f"   • ... and {len(location_data['addresses']) - 3} more locations\n"
+#         report += "\n"
     
-    # Geographic Analysis
-    if location_data.get("cities") or location_data.get("countries"):
-        report += "🗺️ YOUR GEOGRAPHIC FOOTPRINT:\n"
-        if location_data.get("cities"):
-            report += f"   • Cities: {', '.join(location_data['cities'][:3])}\n"
-        if location_data.get("countries"):
-            report += f"   • Countries: {', '.join(location_data['countries'])}\n"
-        report += "\n"
+#     # Geographic Analysis
+#     if location_data.get("cities") or location_data.get("countries"):
+#         report += "🗺️ YOUR GEOGRAPHIC FOOTPRINT:\n"
+#         if location_data.get("cities"):
+#             report += f"   • Cities: {', '.join(location_data['cities'][:3])}\n"
+#         if location_data.get("countries"):
+#             report += f"   • Countries: {', '.join(location_data['countries'])}\n"
+#         report += "\n"
     
-    # ISP Analysis
-    if location_data.get("ip_details"):
-        isps = set()
-        for ip_detail in location_data["ip_details"]:
-            if ip_detail.get("isp") and ip_detail["isp"] != "Unknown":
-                isps.add(ip_detail["isp"])
-        if isps:
-            report += "🌐 INTERNET SERVICE PROVIDERS:\n"
-            for isp in list(isps)[:3]:
-                report += f"   • {isp} 📡\n"
-            if len(isps) > 3:
-                report += f"   • ... and {len(isps) - 3} more ISPs\n"
-            report += "\n"
+#     # ISP Analysis
+#     if location_data.get("ip_details"):
+#         isps = set()
+#         for ip_detail in location_data["ip_details"]:
+#             if ip_detail.get("isp") and ip_detail["isp"] != "Unknown":
+#                 isps.add(ip_detail["isp"])
+#         if isps:
+#             report += "🌐 INTERNET SERVICE PROVIDERS:\n"
+#             for isp in list(isps)[:3]:
+#                 report += f"   • {isp} 📡\n"
+#             if len(isps) > 3:
+#                 report += f"   • ... and {len(isps) - 3} more ISPs\n"
+#             report += "\n"
     
-    # Threat Analysis
-    if threat_analysis.get("location_threats"):
-        report += "🚨 LOCATION-BASED THREATS:\n"
-        for threat in threat_analysis["location_threats"]:
-            report += f"   • {threat} ⚠️\n"
-        report += "\n"
+#     # Threat Analysis
+#     if threat_analysis.get("location_threats"):
+#         report += "🚨 LOCATION-BASED THREATS:\n"
+#         for threat in threat_analysis["location_threats"]:
+#             report += f"   • {threat} ⚠️\n"
+#         report += "\n"
     
-    # Suspicious Patterns
-    if threat_analysis.get("suspicious_patterns"):
-        report += "👻 SUSPICIOUS LOCATION PATTERNS:\n"
-        for pattern in threat_analysis["suspicious_patterns"]:
-            report += f"   • {pattern} 👻\n"
-        report += "\n"
+#     # Suspicious Patterns
+#     if threat_analysis.get("suspicious_patterns"):
+#         report += "👻 SUSPICIOUS LOCATION PATTERNS:\n"
+#         for pattern in threat_analysis["suspicious_patterns"]:
+#             report += f"   • {pattern} 👻\n"
+#         report += "\n"
     
-    # Location Exposure Summary
-    report += f"🌍 LOCATION EXPOSURE SUMMARY:\n"
-    report += f"   • Your location data is exposed across multiple breaches\n"
-    report += f"   • Each IP address and address is a direct path to you\n"
-    report += f"   • Consider using a VPN and address privacy protection\n"
+#     # Location Exposure Summary
+#     report += f"🌍 LOCATION EXPOSURE SUMMARY:\n"
+#     report += f"   • Your location data is exposed across multiple breaches\n"
+#     report += f"   • Each IP address and address is a direct path to you\n"
+#     report += f"   • Consider using a VPN and address privacy protection\n"
     
-    return report
+#     return report
 
 @leakosint_toolkit.tool(
     name="analyze_location_data",
