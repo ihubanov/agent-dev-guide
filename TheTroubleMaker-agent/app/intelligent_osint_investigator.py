@@ -144,9 +144,9 @@ class IntelligentOSINTInvestigator:
     #     website_pattern = r'\b(?:https?://)?(?:www\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b'
     #     return set(re.findall(website_pattern, text))
     
-    async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo: # Unused method
-        """Parse breach data and extract all discoverable information using only the LLM."""
-        logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
+    # async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo: # Unused method
+        # """Parse breach data and extract all discoverable information using only the LLM."""
+        # logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
         if isinstance(breach_data, str):
             try:
                 data = json.loads(breach_data)
@@ -759,53 +759,53 @@ if __name__ == "__main__":
 # async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict: # Unused function
 #     """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
 #     api_token = settings.leakosint_api_key
-    if not api_token:
-        logger.error("🔒 OSINT API Error: No API token configured")
-        return {"error": True, "message": "OSINT search service is not configured."}
-    if not request:
-        logger.error("🔒 OSINT API Error: No search request provided")
-        return {"error": True, "message": "No search request provided."}
+#     if not api_token:
+#         logger.error("🔒 OSINT API Error: No API token configured")
+#         return {"error": True, "message": "OSINT search service is not configured."}
+#     if not request:
+#         logger.error("🔒 OSINT API Error: No search request provided")
+#         return {"error": True, "message": "No search request provided."}
     
-    url = "https://leakosintapi.com/"
-    data = {
-        "token": api_token,
-        "request": request,
-        "limit": limit,
-        "lang": lang,
-        "type": report_type
-    }
+#     url = "https://leakosintapi.com/"
+#     data = {
+#         "token": api_token,
+#         "request": request,
+#         "limit": limit,
+#         "lang": lang,
+#         "type": report_type
+#     }
     
-    logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
+#     logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
     
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, json=data)
-            response.raise_for_status()
-            result = response.json()
+#     try:
+#         async with httpx.AsyncClient(timeout=60.0) as client:
+#             response = await client.post(url, json=data)
+#             response.raise_for_status()
+#             result = response.json()
             
-            if "Error code" in result:
-                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
-                logger.error(f"🔒 OSINT API Error: {error_msg}")
-                return {"error": True, "message": error_msg}
+#             if "Error code" in result:
+#                 error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+#                 logger.error(f"🔒 OSINT API Error: {error_msg}")
+#                 return {"error": True, "message": error_msg}
             
-            logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
-            return result
-    except httpx.HTTPStatusError as e:
-        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
-        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
-        return {"error": True, "message": error_msg}
-    except httpx.TimeoutException as e:
-        error_msg = f"Search request timeout: {str(e)}"
-        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
-        return {"error": True, "message": error_msg}
-    except httpx.ConnectError as e:
-        error_msg = f"Search service connection failed: {str(e)}"
-        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
-        return {"error": True, "message": error_msg}
-    except Exception as e:
-        error_msg = f"Search request failed: {str(e)}"
-        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
-        return {"error": True, "message": error_msg}
+#             logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
+#             return result
+#     except httpx.HTTPStatusError as e:
+#         error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+#         logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+#         return {"error": True, "message": error_msg}
+#     except httpx.TimeoutException as e:
+#         error_msg = f"Search request timeout: {str(e)}"
+#         logger.error(f"🔒 OSINT API Timeout: {error_msg}")
+#         return {"error": True, "message": error_msg}
+#     except httpx.ConnectError as e:
+#         error_msg = f"Search service connection failed: {str(e)}"
+#         logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+#         return {"error": True, "message": error_msg}
+#     except Exception as e:
+#         error_msg = f"Search request failed: {str(e)}"
+#         logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+#         return {"error": True, "message": error_msg}
 
 async def _geolocate_ip(ip: str) -> dict:
     """Geolocate an IP address using a free API service"""
