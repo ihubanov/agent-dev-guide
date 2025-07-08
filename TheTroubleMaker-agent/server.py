@@ -1,7 +1,7 @@
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import asyncio
+# import asyncio # Unused import
 from contextlib import asynccontextmanager
 from app.configs import settings
 from app.apis import api_router

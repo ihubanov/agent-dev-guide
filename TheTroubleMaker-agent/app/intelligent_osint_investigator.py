@@ -70,81 +70,81 @@ class IntelligentOSINTInvestigator:
     
     def __init__(self):
         self.thinking_module = SequentialThinkingModule()
-        self.discovered_info = DiscoveredInfo()
+        # self.discovered_info = DiscoveredInfo() # Unused instance variable
         self.search_history = []
-        self.investigation_results = {}
+        # self.investigation_results = {} # Unused instance variable
         
-    def _extract_emails(self, text: str) -> Set[str]:
-        """Extract email addresses from text"""
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-        return set(re.findall(email_pattern, text))
+    # def _extract_emails(self, text: str) -> Set[str]: # Unused method
+    #     """Extract email addresses from text"""
+    #     email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    #     return set(re.findall(email_pattern, text))
     
-    def _extract_phone_numbers(self, text: str) -> Set[str]:
-        """Extract phone numbers from text"""
-        # Various phone number patterns
-        patterns = [
-            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US format
-            r'\b\+1[-.]?\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US with country code
-            r'\b\d{10,15}\b',  # Generic long numbers
-        ]
-        phones = set()
-        for pattern in patterns:
-            phones.update(re.findall(pattern, text))
-        return phones
+    # def _extract_phone_numbers(self, text: str) -> Set[str]: # Unused method
+    #     """Extract phone numbers from text"""
+    #     # Various phone number patterns
+    #     patterns = [
+    #         r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US format
+    #         r'\b\+1[-.]?\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US with country code
+    #         r'\b\d{10,15}\b',  # Generic long numbers
+    #     ]
+    #     phones = set()
+    #     for pattern in patterns:
+    #         phones.update(re.findall(pattern, text))
+    #     return phones
     
-    def _extract_names(self, text: str) -> Set[str]:
-        """Extract potential full names from text"""
-        # Look for patterns like "First Last" or "First M. Last"
-        name_pattern = r'\b[A-Z][a-z]+ [A-Z][a-z]+\b'
-        names = set(re.findall(name_pattern, text))
+    # def _extract_names(self, text: str) -> Set[str]: # Unused method
+    #     """Extract potential full names from text"""
+    #     # Look for patterns like "First Last" or "First M. Last"
+    #     name_pattern = r'\b[A-Z][a-z]+ [A-Z][a-z]+\b'
+    #     names = set(re.findall(name_pattern, text))
         
-        # Also look for patterns with middle initials
-        name_with_middle_pattern = r'\b[A-Z][a-z]+ [A-Z]\. [A-Z][a-z]+\b'
-        names.update(re.findall(name_with_middle_pattern, text))
+    #     # Also look for patterns with middle initials
+    #     name_with_middle_pattern = r'\b[A-Z][a-z]+ [A-Z]\. [A-Z][a-z]+\b'
+    #     names.update(re.findall(name_with_middle_pattern, text))
         
-        return names
+    #     return names
     
-    def _extract_usernames(self, text: str) -> Set[str]:
-        """Extract potential usernames from text"""
-        # Look for common username patterns
-        username_patterns = [
-            r'\b[A-Za-z0-9_]{3,20}\b',  # Basic username pattern
-            r'@([A-Za-z0-9_]{3,20})',   # Twitter-style handles
-        ]
-        usernames = set()
-        for pattern in username_patterns:
-            matches = re.findall(pattern, text)
-            # Filter out common words that aren't usernames
-            filtered = [m for m in matches if len(m) >= 3 and not m.isdigit()]
-            usernames.update(filtered)
-        return usernames
+    # def _extract_usernames(self, text: str) -> Set[str]: # Unused method
+    #     """Extract potential usernames from text"""
+    #     # Look for common username patterns
+    #     username_patterns = [
+    #         r'\b[A-Za-z0-9_]{3,20}\b',  # Basic username pattern
+    #         r'@([A-Za-z0-9_]{3,20})',   # Twitter-style handles
+    #     ]
+    #     usernames = set()
+    #     for pattern in username_patterns:
+    #         matches = re.findall(pattern, text)
+    #         # Filter out common words that aren't usernames
+    #         filtered = [m for m in matches if len(m) >= 3 and not m.isdigit()]
+    #         usernames.update(filtered)
+    #     return usernames
     
-    def _extract_ip_addresses(self, text: str) -> Set[str]:
-        """Extract IP addresses from text"""
-        ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-        return set(re.findall(ip_pattern, text))
+    # def _extract_ip_addresses(self, text: str) -> Set[str]: # Unused method
+    #     """Extract IP addresses from text"""
+    #     ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
+    #     return set(re.findall(ip_pattern, text))
     
-    def _extract_social_media(self, text: str) -> Set[str]:
-        """Extract social media handles and platforms"""
-        social_patterns = [
-            r'@([A-Za-z0-9_]{3,20})',  # Twitter/Instagram handles
-            r'facebook\.com/([A-Za-z0-9_.]+)',
-            r'twitter\.com/([A-Za-z0-9_]+)',
-            r'instagram\.com/([A-Za-z0-9_.]+)',
-            r'linkedin\.com/in/([A-Za-z0-9-]+)',
-        ]
-        social_media = set()
-        for pattern in social_patterns:
-            matches = re.findall(pattern, text)
-            social_media.update(matches)
-        return social_media
+    # def _extract_social_media(self, text: str) -> Set[str]: # Unused method
+    #     """Extract social media handles and platforms"""
+    #     social_patterns = [
+    #         r'@([A-Za-z0-9_]{3,20})',  # Twitter/Instagram handles
+    #         r'facebook\.com/([A-Za-z0-9_.]+)',
+    #         r'twitter\.com/([A-Za-z0-9_]+)',
+    #         r'instagram\.com/([A-Za-z0-9_.]+)',
+    #         r'linkedin\.com/in/([A-Za-z0-9-]+)',
+    #     ]
+    #     social_media = set()
+    #     for pattern in social_patterns:
+    #         matches = re.findall(pattern, text)
+    #         social_media.update(matches)
+    #     return social_media
     
-    def _extract_websites(self, text: str) -> Set[str]:
-        """Extract website domains from text"""
-        website_pattern = r'\b(?:https?://)?(?:www\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b'
-        return set(re.findall(website_pattern, text))
+    # def _extract_websites(self, text: str) -> Set[str]: # Unused method
+    #     """Extract website domains from text"""
+    #     website_pattern = r'\b(?:https?://)?(?:www\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b'
+    #     return set(re.findall(website_pattern, text))
     
-    async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo:
+    async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo: # Unused method
         """Parse breach data and extract all discoverable information using only the LLM."""
         logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
         if isinstance(breach_data, str):
@@ -598,10 +598,10 @@ class IntelligentOSINTInvestigator:
             results[ip] = geo
         return results
 
-    def _analyze_geographic_distribution(self, discovered_info: DiscoveredInfo) -> Dict[str, Any]:
-        """Analyze the geographic distribution of user's own leaked IP addresses."""
-        if not discovered_info.geolocations:
-            return {"countries": [], "total_countries": 0, "cities": [], "total_cities": 0, "regions": [], "total_regions": 0}
+    # def _analyze_geographic_distribution(self, discovered_info: DiscoveredInfo) -> Dict[str, Any]: # Unused method
+    #     """Analyze the geographic distribution of user's own leaked IP addresses."""
+    #     if not discovered_info.geolocations:
+    #         return {"countries": [], "total_countries": 0, "cities": [], "total_cities": 0, "regions": [], "total_regions": 0}
         
         countries = set()
         cities = set()
@@ -756,9 +756,9 @@ if __name__ == "__main__":
     
     asyncio.run(test_investigation()) 
 
-async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict:
-    """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
-    api_token = settings.leakosint_api_key
+# async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict: # Unused function
+#     """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
+#     api_token = settings.leakosint_api_key
     if not api_token:
         logger.error("🔒 OSINT API Error: No API token configured")
         return {"error": True, "message": "OSINT search service is not configured."}
