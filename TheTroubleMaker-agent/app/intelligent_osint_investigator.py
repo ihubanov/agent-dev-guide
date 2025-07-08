@@ -145,39 +145,39 @@ class IntelligentOSINTInvestigator:
     #     return set(re.findall(website_pattern, text))
     
     # async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo: # Unused method
-        # """Parse breach data and extract all discoverable information using only the LLM."""
-        # logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
-        if isinstance(breach_data, str):
-            try:
-                data = json.loads(breach_data)
-                logger.debug(f"[LLM-OSINT] Parsed string as JSON, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
-            except:
-                data = {"raw_text": breach_data}
-                logger.debug(f"[LLM-OSINT] Failed to parse as JSON, treating as raw text")
-        else:
-            data = breach_data
-            logger.debug(f"[LLM-OSINT] Data is already dict, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
-        raw_text = ""
-        if "raw_text" in data:
-            raw_text = data["raw_text"]
-            logger.debug(f"[LLM-OSINT] Found raw_text, length: {len(raw_text)}")
-        elif isinstance(data, dict) and "List" in data and isinstance(data["List"], dict):
-            logger.debug(f"[LLM-OSINT] Processing List data, databases: {len(data['List'])}")
-            for db_name, db_data in data["List"].items():
-                if isinstance(db_data, dict) and db_data.get("Data"):
-                    for data_item in db_data["Data"]:
-                        for v in data_item.values():
-                            if isinstance(v, str):
-                                raw_text += v + "\n"
-            logger.debug(f"[LLM-OSINT] Built raw_text from List data, length: {len(raw_text)}")
-        else:
-            logger.debug(f"[LLM-OSINT] No raw_text or List found in data")
-        if raw_text.strip():
-            logger.debug(f"[LLM-OSINT] Calling _extract_with_llm with text length: {len(raw_text)}")
-            return await self._extract_with_llm(raw_text)
-        else:
-            logger.debug(f"[LLM-OSINT] No raw_text to process, returning empty DiscoveredInfo")
-            return DiscoveredInfo()
+    #     """Parse breach data and extract all discoverable information using only the LLM."""
+    #     logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
+    #     if isinstance(breach_data, str):
+    #         try:
+    #             data = json.loads(breach_data)
+    #             logger.debug(f"[LLM-OSINT] Parsed string as JSON, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
+    #         except:
+    #             data = {"raw_text": breach_data}
+    #             logger.debug(f"[LLM-OSINT] Failed to parse as JSON, treating as raw text")
+    #     else:
+    #         data = breach_data
+    #         logger.debug(f"[LLM-OSINT] Data is already dict, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
+    #     raw_text = ""
+    #     if "raw_text" in data:
+    #         raw_text = data["raw_text"]
+    #         logger.debug(f"[LLM-OSINT] Found raw_text, length: {len(raw_text)}")
+    #     elif isinstance(data, dict) and "List" in data and isinstance(data["List"], dict):
+    #         logger.debug(f"[LLM-OSINT] Processing List data, databases: {len(data['List'])}")
+    #         for db_name, db_data in data["List"].items():
+    #             if isinstance(db_data, dict) and db_data.get("Data"):
+    #                 for data_item in db_data["Data"]:
+    #                     for v in data_item.values():
+    #                         if isinstance(v, str):
+    #                             raw_text += v + "\n"
+    #         logger.debug(f"[LLM-OSINT] Built raw_text from List data, length: {len(raw_text)}")
+    #     else:
+    #         logger.debug(f"[LLM-OSINT] No raw_text or List found in data")
+    #     if raw_text.strip():
+    #         logger.debug(f"[LLM-OSINT] Calling _extract_with_llm with text length: {len(raw_text)}")
+    #         return await self._extract_with_llm(raw_text)
+    #     else:
+    #         logger.debug(f"[LLM-OSINT] No raw_text to process, returning empty DiscoveredInfo")
+    #         return DiscoveredInfo()
     
     async def _sequential_thinking_analysis(self, initial_query: str, discovered_info: DiscoveredInfo) -> Dict[str, Any]:
         """Use sequential thinking to analyze discovered info and decide on additional searches"""
