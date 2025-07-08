@@ -24,12 +24,12 @@ class Settings(BaseSettings):
         return [item.strip() for item in self.ignore_list_raw.split(',') if item.strip()]
 
     # Logging
-    # lite_logging_base_url: Optional[str] = Field(alias="LITE_LOGGING_BASE_URL", default=None) # Unused
-    # lite_logging_channel: Optional[str] = Field(alias="LITE_LOGGING_CHANNEL", default=f'room-{os.urandom(16).hex()}') # Unused
-    telegram_post_url: Optional[str] = Field(alias="TELEGRAM_POST_URL", default=None) # Unused, but might be used in the future
+    lite_logging_base_url: Optional[str] = Field(alias="LITE_LOGGING_BASE_URL", default=None)
+    lite_logging_channel: Optional[str] = Field(alias="LITE_LOGGING_CHANNEL", default=f'room-{os.urandom(16).hex()}')
+    telegram_post_url: Optional[str] = Field(alias="TELEGRAM_POST_URL", default=None)
 
     # app state
-    # app_env: str = Field(alias="APP_ENV", default="development") # Unused
+    app_env: str = Field(alias="APP_ENV", default="development")
 
     # Server
     host: str = Field(alias="HOST", default="0.0.0.0")
