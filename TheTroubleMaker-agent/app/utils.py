@@ -33,7 +33,7 @@ def batching(generator: Union[Generator[T, None, None], List[T]], batch_size: in
     
 
 def convert_mcp_tools_to_openai_format(
-    mcp_tools: List[Any]
+    mcp_tools: Union[List[Any], Any]
 ) -> List[Dict[str, Any]]:
     """Convert MCP tool format to OpenAI tool format"""
     openai_tools = []
@@ -42,7 +42,7 @@ def convert_mcp_tools_to_openai_format(
     logger.debug(f"Input mcp_tools: {mcp_tools}")
     
     # Extract tools from the response
-    if hasattr(mcp_tools, 'tools'):
+    if not isinstance(mcp_tools, list) and hasattr(mcp_tools, 'tools'):
         tools_list = mcp_tools.tools
         logger.debug("Found ListToolsResult, extracting tools attribute")
     elif isinstance(mcp_tools, dict):
@@ -104,6 +104,8 @@ def compare_toolname(openai_toolname: str, mcp_toolname: str) -> bool:
 async def execute_openai_compatible_toolcall(
     toolname: str, arguments: Dict[str, Any], mcp: fastmcp.FastMCP
 ) -> list[Union[TextContent, EmbeddedResource]]:
+    logger.info(f"🔧 Executing tool: {toolname} with arguments: {arguments}")
+    
     tools = await mcp._mcp_list_tools()
     candidate: List[Tool] = []
 
@@ -119,59 +121,46 @@ async def execute_openai_compatible_toolcall(
         )
         
     elif len(candidate) == 0:
-        return CallToolResult(
-            content=[TextContent(text=f"Tool {toolname} not found")], 
-            isError=True
-        )
+        logger.error(f"❌ Tool {toolname} not found")
+        return [TextContent(type="text", text=f"Tool {toolname} not found")]
         
     toolname = candidate[0].name
+    logger.info(f"🎯 Found tool: {toolname}")
 
     try:
+        # Validate arguments before calling
+        if not arguments:
+            logger.warning(f"⚠️ Empty arguments provided for tool {toolname}")
+        
         res = await mcp._mcp_call_tool(toolname, arguments)
-#        logger.info(f"🔍 [DEBUG] Raw result from mcp._mcp_call_tool: {repr(res)}")
-#        logger.info(f"🔍 [DEBUG] Raw result type: {type(res).__name__}")
-#        if hasattr(res, '__len__'):
-#            logger.info(f"🔍 [DEBUG] Raw result length: {len(res)}")
+        logger.info(f"✅ Tool {toolname} executed successfully")
+        
         if isinstance(res, (list, tuple)):
             for i, item in enumerate(res):
-#                logger.info(f"🔍 [DEBUG] Raw result item {i}: {repr(item)} (type: {type(item).__name__})")
                 pass
     except Exception as e:
-        logger.error(f"Error executing tool {toolname} with arguments {arguments}: {e}")
-        return CallToolResult(
-            content=[TextContent(text=f"Error executing tool {toolname}: {e}")], 
-            isError=True
-        )
+        logger.error(f"❌ Error executing tool {toolname} with arguments {arguments}: {e}")
+        return [TextContent(type="text", text=f"Error executing tool {toolname}: {e}")]
 
     filtered_result = [
         e for e in res 
         if isinstance(e, (TextContent, EmbeddedResource))
     ]
     
-#    logger.info(f"🔍 [DEBUG] Filtered result: {repr(filtered_result)}")
-#    logger.info(f"🔍 [DEBUG] Filtered result type: {type(filtered_result).__name__}")
-#    logger.info(f"🔍 [DEBUG] Filtered result length: {len(filtered_result)}")
-
     # Fix: Handle the tuple structure properly
     if isinstance(res, tuple) and len(res) > 0:
         # Extract the list from the first tuple item
         content_list = res[0] if isinstance(res[0], list) else []
-#        logger.info(f"🔍 [DEBUG] Extracted content_list: {repr(content_list)}")
-#        logger.info(f"🔍 [DEBUG] Content list type: {type(content_list).__name__}")
-#        logger.info(f"🔍 [DEBUG] Content list length: {len(content_list)}")
         
         filtered_result = [
             e for e in content_list
             if isinstance(e, (TextContent, EmbeddedResource))
         ]
-        
-#        logger.info(f"🔍 [DEBUG] Fixed filtered result: {repr(filtered_result)}")
-#        logger.info(f"🔍 [DEBUG] Fixed filtered result type: {type(filtered_result).__name__}")
-#        logger.info(f"🔍 [DEBUG] Fixed filtered result length: {len(filtered_result)}")
 
+    logger.info(f"📤 Returning {len(filtered_result)} content items from tool {toolname}")
     return filtered_result
 
-def refine_mcp_response(something: Any) -> str:
+def refine_mcp_response(something: Any) -> Any:
     if isinstance(something, dict):
         return {
             k: refine_mcp_response(v)
@@ -225,10 +214,10 @@ def refine_chat_history(messages: list[dict[str, str]], system_prompt: str) -> l
             attachments = []
 
             for item in content:
-                if item.get('type', 'undefined') == 'text':
+                if isinstance(item, dict) and item.get('type', 'undefined') == 'text':
                     text_input += item.get('text') or ''
 
-                elif item.get('type', 'undefined') == 'file':
+                elif isinstance(item, dict) and item.get('type', 'undefined') == 'file':
                     pass
 
             if attachments:
@@ -275,3 +264,21 @@ def refine_assistant_message(
         assistant_message['content'] = strip_thinking_content(assistant_message['content'] or "")
 
     return assistant_message
+
+def check_ignore_list(query: str, ignore_list: List[str]) -> List[str]:
+    """
+    Check if a query contains any entities from the ignore list.
+    Returns a list of matched entities.
+    """
+    matched_entities = []
+    query_lower = query.lower()
+    
+    for entity in ignore_list:
+        if entity.lower() in query_lower:
+            matched_entities.append(entity)
+            logger.info(f"🔒 Ignore list match found: '{entity}' in query")
+    
+    if matched_entities:
+        logger.info(f"🔒 Query contains {len(matched_entities)} ignored entities: {matched_entities}")
+    
+    return matched_entities

@@ -34,7 +34,7 @@ class SequentialThinkingModule:
     This is an exact implementation of the sequential thinking functionality from the Python example.
     """
     
-    def __init__(self, disable_logging: bool = None):
+    def __init__(self, disable_logging: Optional[bool] = None):
         """
         Initialize the sequential thinking module.
         
@@ -138,15 +138,18 @@ class SequentialThinkingModule:
             # Update total thoughts if current thought number is higher
             if validated_input.thought_number > validated_input.total_thoughts:
                 validated_input.total_thoughts = validated_input.thought_number
+                logger.debug(f"🔧 [THINKING DEBUG] Updated total_thoughts from {validated_input.total_thoughts - 1} to {validated_input.total_thoughts}")
 
             # Add to thought history
             self.thought_history.append(validated_input)
+            logger.debug(f"🔧 [THINKING DEBUG] Added thought {validated_input.thought_number}/{validated_input.total_thoughts} to history. Total thoughts: {len(self.thought_history)}")
 
             # Handle branching
             if validated_input.branch_from_thought and validated_input.branch_id:
                 if validated_input.branch_id not in self.branches:
                     self.branches[validated_input.branch_id] = []
                 self.branches[validated_input.branch_id].append(validated_input)
+                logger.debug(f"🔧 [THINKING DEBUG] Added thought to branch {validated_input.branch_id}")
 
             # Log the thought if logging is enabled
             if not self.disable_thought_logging:
@@ -282,7 +285,7 @@ def process_sequential_thought(
 
 
 # Convenience function for creating a new thinking session
-def create_thinking_session(disable_logging: bool = None) -> SequentialThinkingModule:
+def create_thinking_session(disable_logging: Optional[bool] = None) -> SequentialThinkingModule:
     """
     Create a new sequential thinking session.
     

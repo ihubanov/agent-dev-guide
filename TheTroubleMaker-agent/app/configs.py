@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import Optional
+from pydantic import Field, field_validator, computed_field
+from typing import Optional, List
 import os
 
 class Settings(BaseSettings):
@@ -11,6 +11,17 @@ class Settings(BaseSettings):
 
     # OSINT Search Service (REQUIRED)
     leakosint_api_key: str = Field(alias="LEAKOSINT_API_KEY", default="")
+
+    # Ignore List - entities to refuse information about (comma-separated string)
+    ignore_list_raw: str = Field(alias="IGNORE_LIST", default="")
+
+    @computed_field
+    @property
+    def ignore_list(self) -> List[str]:
+        """Parse comma-separated ignore list into a list of strings"""
+        if not self.ignore_list_raw.strip():
+            return []
+        return [item.strip() for item in self.ignore_list_raw.split(',') if item.strip()]
 
     # Logging
     lite_logging_base_url: Optional[str] = Field(alias="LITE_LOGGING_BASE_URL", default=None)

@@ -16,6 +16,7 @@ import json
 import math
 from app.configs import settings
 from datetime import datetime
+from app.intelligent_osint_investigator import IntelligentOSINTInvestigator, DiscoveredInfo, intelligent_osint_investigation
 
 logger = logging.getLogger(__name__)
 
@@ -201,8 +202,10 @@ async def _get_raw_breach_data(request: str, limit: int = 100, lang: str = "en",
     """Get raw breach data for location analysis"""
     api_token = settings.leakosint_api_key
     if not api_token:
+        logger.error("🔒 OSINT API Error: No API token configured")
         return {"error": True, "message": "OSINT search service is not configured."}
     if not request:
+        logger.error("🔒 OSINT API Error: No search request provided")
         return {"error": True, "message": "No search request provided."}
     
     url = "https://leakosintapi.com/"
@@ -214,6 +217,8 @@ async def _get_raw_breach_data(request: str, limit: int = 100, lang: str = "en",
         "type": report_type
     }
     
+    logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
+    
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=data)
@@ -221,18 +226,39 @@ async def _get_raw_breach_data(request: str, limit: int = 100, lang: str = "en",
             result = response.json()
             
             if "Error code" in result:
-                return {"error": True, "message": f"Search service error: {result.get('Error code', 'Unknown error')}"}
+                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+                logger.error(f"🔒 OSINT API Error: {error_msg}")
+                return {"error": True, "message": error_msg}
             
+            logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
             return result
+    except httpx.HTTPStatusError as e:
+        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+        logger.error(f"🔒 Response headers: {dict(e.response.headers)}")
+        return {"error": True, "message": error_msg}
+    except httpx.TimeoutException as e:
+        error_msg = f"Search request timeout: {str(e)}"
+        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
+        return {"error": True, "message": error_msg}
+    except httpx.ConnectError as e:
+        error_msg = f"Search service connection failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+        return {"error": True, "message": error_msg}
     except Exception as e:
-        return {"error": True, "message": f"Search request failed: {str(e)}"}
+        error_msg = f"Search request failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+        logger.error(f"🔒 Error type: {type(e).__name__}")
+        return {"error": True, "message": error_msg}
 
 async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict:
     """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
     api_token = settings.leakosint_api_key
     if not api_token:
+        logger.error("🔒 OSINT API Error: No API token configured")
         return {"error": True, "message": "OSINT search service is not configured."}
     if not request:
+        logger.error("🔒 OSINT API Error: No search request provided")
         return {"error": True, "message": "No search request provided."}
     
     url = "https://leakosintapi.com/"
@@ -244,6 +270,8 @@ async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", r
         "type": report_type
     }
     
+    logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
+    
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=data)
@@ -251,22 +279,35 @@ async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", r
             result = response.json()
             
             if "Error code" in result:
-                return {"error": True, "message": f"Search service error: {result.get('Error code', 'Unknown error')}"}
+                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+                logger.error(f"🔒 OSINT API Error: {error_msg}")
+                return {"error": True, "message": error_msg}
             
+            logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
             return result
+    except httpx.HTTPStatusError as e:
+        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+        logger.error(f"🔒 Response headers: {dict(e.response.headers)}")
+        return {"error": True, "message": error_msg}
+    except httpx.TimeoutException as e:
+        error_msg = f"Search request timeout: {str(e)}"
+        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
+        return {"error": True, "message": error_msg}
+    except httpx.ConnectError as e:
+        error_msg = f"Search service connection failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+        return {"error": True, "message": error_msg}
     except Exception as e:
-        return {"error": True, "message": f"Search request failed: {str(e)}"}
+        error_msg = f"Search request failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+        logger.error(f"🔒 Error type: {type(e).__name__}")
+        return {"error": True, "message": error_msg}
 
 async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
-#    print(f"\n🔍 [DEBUG] search_leak called with parameters:")
-#    print(f"   - request: '{request}'")
-#    print(f"   - limit: {limit}")
-#    print(f"   - lang: '{lang}'")
-#    print(f"   - type: '{report_type}'")
     api_token = settings.leakosint_api_key
-#    print(f"🔑 [DEBUG] API token loaded: {'✓ Present' if api_token else '✗ Missing'}")
     if not api_token:
-#        print("❌ [DEBUG] No API token found - returning error")
+        logger.error("🔒 OSINT API Error: No API token configured")
         error_data = {
             "error": True,
             "message": "OSINT search service is not configured. Please contact the administrator.",
@@ -274,7 +315,7 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
         }
         return json.dumps(error_data)
     if not request:
-#        print("❌ [DEBUG] No search request provided - returning error")
+        logger.error("🔒 OSINT API Error: No search request provided")
         error_data = {
             "error": True,
             "message": "No search request provided. Please provide a request parameter.",
@@ -282,7 +323,6 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
         }
         return json.dumps(error_data)
     url = "https://leakosintapi.com/"
-#    print(f"🌐 [DEBUG] Making request to: {url}")
     data = {
         "token": api_token,
         "request": request,
@@ -290,26 +330,26 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
         "lang": lang,
         "type": report_type
     }
-#    print(f"📤 [DEBUG] Request data: {data}")
+    
+    logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
+    
     try:
-#        print("🚀 [DEBUG] Starting HTTP request...")
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=data)
-#            print(f"📥 [DEBUG] Response status: {response.status_code}")
-#            print(f"📥 [DEBUG] Response headers: {dict(response.headers)}")
             response.raise_for_status()
             result = response.json()
-#            print(f"📄 [DEBUG] Response JSON keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             
             if "Error code" in result:
-#                print(f"❌ [DEBUG] API returned error: {result.get('Error code', 'Unknown error')}")
+                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+                logger.error(f"🔒 OSINT API Error: {error_msg}")
                 error_data = {
                     "error": True,
-                    "message": f"Search service error: {result.get('Error code', 'Unknown error')}",
+                    "message": error_msg,
                     "details": result
                 }
                 return json.dumps(error_data)
-#            print(f"✅ [DEBUG] API request successful")
+            
+            logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
             # Return a more detailed and actionable summary
             total_databases = len(result.get("List", {}))
             total_results = result.get("NumOfResults", 0)
@@ -505,7 +545,7 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
             discovered_data["location_data"] = location_data
             discovered_data["location_analysis"] = location_analysis
             
-            # Generate roast content based on breach data
+            # Generate roast content using LLM instead of hardcoded roasts
             breach_count = len(result["List"])
             databases = list(result["List"].keys())
             
@@ -519,34 +559,20 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
             else:
                 roast_style = "friendly"
             
-            # Generate roast content based on sequential thinking analysis
+            # Generate LLM roast instead of hardcoded roasts
             try:
-                if roast_style == "friendly":
-                    roast = f"Hey there, digital footprint enthusiast! 🌟 I found your email in {breach_count} different data breaches. That's like being the most popular kid at the 'Oops, my data got leaked' party! Your info has been on more databases than a library catalog. But hey, at least you're consistent - you really know how to make an impression across the internet! 😄"
-                
-                elif roast_style == "savage":
-                    roast = f"OH MY DIGITAL GODS! 🔥 Your email has been in {breach_count} data breaches! You're like a digital version of that friend who always forgets their keys, but instead of keys, it's your entire online identity! Your data has been passed around more than a hot potato at a cybersecurity conference. At this point, hackers probably have your information on speed dial! 💀"
-                
-                elif roast_style == "dad_jokes":
-                    roast = f"Hey kiddo! 👨‍👧‍👦 I found your email in {breach_count} data breaches. You know what that means? You're like a digital version of that dad who tells the same joke at every family gathering - except instead of jokes, it's your personal information that keeps getting repeated! Why did the cybersecurity expert cross the road? To get away from your data breach history! 😂"
-                
-                elif roast_style == "tech_nerd":
-                    roast = f"*adjusts glasses* 🤓 TECHNICAL ANALYSIS COMPLETE: Your email has been compromised in {breach_count} separate security incidents. Your digital footprint is like a recursive function that keeps calling itself with increasingly embarrassing parameters. Your data has been exposed more times than a JavaScript variable in the global scope! The entropy of your personal information is approaching maximum chaos! ⚡"
-                
-                else:  # random
-                    roast = f"🎭 *dramatic gasp* Your email has been in {breach_count} data breaches! That's like being the main character in a cybersecurity soap opera! Your personal information has been on more adventures than a backpacking tourist in Europe! At this point, your data probably has its own frequent flyer miles! ✈️ Maybe we should start a support group: 'Data Breach Survivors Anonymous' - you'd be the president! 🏆"
-                
-                # Add location-based roasting if available
-                if location_data.get("cities") or location_data.get("countries"):
-                    locations = location_data.get("cities", []) + location_data.get("countries", [])
-                    if locations:
-                        unique_locations = list(set(locations))[:3]  # Top 3 unique locations
-                        roast += f"\n\n🌍 And get this - your digital trail spans across {len(unique_locations)} different locations: {', '.join(unique_locations)}! You're like a digital nomad, except instead of working remotely, you're just leaving your data everywhere! 🗺️"
-                
-                roast += f"\n\n💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐"
+                # Use the helper function to generate LLM roast
+                roast = await generate_roast_for_breach_data(
+                    breach_count=breach_count,
+                    roast_style=roast_style,
+                    discovered_data=discovered_data,
+                    location_data=location_data
+                )
                 
             except Exception as e:
-                roast = f"🎭 Well, I found some interesting stuff about your digital footprint, but my roasting skills are having a moment. Let's just say your data has been on quite the adventure! 😄"
+                logger.error(f"Failed to generate LLM roast: {str(e)}")
+                # Fallback to a simple roast if LLM fails
+                roast = f"🎭 Well, I found some interesting stuff about your digital footprint in {breach_count} data breaches, but my roasting skills are having a moment. Let's just say your data has been on quite the adventure! 😄\n\n💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐"
             
             # Return structured data with roast included
             return json.dumps({
@@ -558,56 +584,68 @@ async def _search_leak_impl(request: str, limit: int = 100, lang: str = "en", re
                     "style": roast_style,
                     "content": roast,
                     "breach_count": breach_count,
-                    "databases": databases
+                    "databases": databases,
+                    "generated_by": "llm"
                 }
             }, indent=2)
             
-#            print(f"📤 [DEBUG] Returning detailed summary: {summary[:200]}...")
-#            print(f"📤 [DEBUG] Full response length: {len(summary)}")
-#            print(f"📤 [DEBUG] Response type: {type(summary).__name__}")
-#            print(f"📤 [DEBUG] Response repr: {repr(summary[:500])}")
             return summary
     except httpx.HTTPStatusError as e:
-#        print(f"❌ [DEBUG] HTTP error: {e.response.status_code} - {str(e)}")
+        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+        logger.error(f"🔒 Response headers: {dict(e.response.headers)}")
         error_data = {
             "error": True,
-            "message": f"Search service unavailable: {e.response.status_code}",
+            "message": error_msg,
             "details": str(e)
         }
         return json.dumps(error_data)
-    except Exception as e:
-#        print(f"❌ [DEBUG] Unexpected error: {str(e)}")
+    except httpx.TimeoutException as e:
+        error_msg = f"Search request timeout: {str(e)}"
+        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
         error_data = {
             "error": True,
-            "message": f"Search request failed: {str(e)}",
+            "message": error_msg,
+            "details": None
+        }
+        return json.dumps(error_data)
+    except httpx.ConnectError as e:
+        error_msg = f"Search service connection failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+        error_data = {
+            "error": True,
+            "message": error_msg,
+            "details": None
+        }
+        return json.dumps(error_data)
+    except Exception as e:
+        error_msg = f"Search request failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+        logger.error(f"🔒 Error type: {type(e).__name__}")
+        error_data = {
+            "error": True,
+            "message": error_msg,
             "details": None
         }
         return json.dumps(error_data)
 
 async def _batch_search_leak_impl(requests: list[str], limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
-#    print(f"\n🔍 [DEBUG] batch_search_leak called with parameters:")
-#    print(f"   - requests: {requests}")
-#    print(f"   - limit: {limit}")
-#    print(f"   - lang: '{lang}'")
-#    print(f"   - report_type: '{report_type}'")
     api_token = settings.leakosint_api_key
-#    print(f"🔑 [DEBUG] API token loaded: {'✓ Present' if api_token else '✗ Missing'}")
     if not api_token:
-#        print("❌ [DEBUG] No API token found - returning error")
+        logger.error("🔒 OSINT API Error: No API token configured")
         return json.dumps({
             "error": True,
             "message": "OSINT search service is not configured. Please contact the administrator.",
             "details": None
         })
     if not requests:
-#        print("❌ [DEBUG] No search requests provided - returning error")
+        logger.error("🔒 OSINT API Error: No search requests provided")
         return json.dumps({
             "error": True,
             "message": "No search requests provided. Please provide a requests parameter.",
             "details": None
         })
     url = "https://leakosintapi.com/"
-#    print(f"🌐 [DEBUG] Making request to: {url}")
     data = {
         "token": api_token,
         "request": requests,  # Send as array
@@ -615,25 +653,25 @@ async def _batch_search_leak_impl(requests: list[str], limit: int = 100, lang: s
         "lang": lang,
         "type": report_type
     }
-#    print(f"📤 [DEBUG] Request data: {data}")
+    
+    logger.info(f"🔍 OSINT API Batch Request: {len(requests)} queries (limit={limit}, lang={lang}, type={report_type})")
+    
     try:
-#        print("🚀 [DEBUG] Starting HTTP request...")
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(url, json=data)
-#            print(f"📥 [DEBUG] Response status: {response.status_code}")
-#            print(f"📥 [DEBUG] Response headers: {dict(response.headers)}")
             response.raise_for_status()
             result = response.json()
-#            print(f"📄 [DEBUG] Response JSON keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
             if "Error code" in result:
-#                print(f"❌ [DEBUG] API returned error: {result.get('Error code', 'Unknown error')}")
+                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+                logger.error(f"🔒 OSINT API Error: {error_msg}")
                 error_data = {
                     "error": True,
-                    "message": f"Search service error: {result.get('Error code', 'Unknown error')}",
+                    "message": error_msg,
                     "details": result
                 }
                 return json.dumps(error_data)
-#            print(f"✅ [DEBUG] API request successful")
+            
+            logger.info(f"✅ OSINT API Batch Success: {len(requests)} queries processed")
             # Return a comprehensive batch report with roasts
             total_queries = len(requests)
             total_time = result.get("total time search", 0)
@@ -666,18 +704,18 @@ async def _batch_search_leak_impl(requests: list[str], limit: int = 100, lang: s
                             else:
                                 roast_style = "friendly"
                             
-                            if roast_style == "friendly":
-                                roast = f"  🌟 {query} has been in {total_db} data breaches - quite the social butterfly!"
-                            elif roast_style == "savage":
-                                roast = f"  🔥 {query} has been compromised {total_db} times - your data is more popular than a viral meme!"
-                            elif roast_style == "dad_jokes":
-                                roast = f"  👨‍👧‍👦 {query} has been in {total_db} breaches - like a dad joke, it keeps coming back!"
-                            elif roast_style == "tech_nerd":
-                                roast = f"  🤓 {query} has been exposed {total_db} times - your digital footprint is like a recursive function!"
-                            else:
-                                roast = f"  🎭 {query} has been in {total_db} breaches - starring in its own cybersecurity drama!"
+                            # Generate LLM roast for this query instead of hardcoded roasts
+                            try:
+                                prompt = f"Write a short {roast_style} roast for '{query}' which has been in {total_db} data breaches. Keep it brief and funny for a batch report. Use emojis."
+                                roast = await generate_roast_with_llm(prompt, temperature=settings.llm_temperature)
+                                # Ensure the roast is properly indented for the summary
+                                roast = "  " + roast.replace("\n", "\n  ")
+                            except Exception as e:
+                                logger.error(f"Failed to generate LLM roast for {query}: {str(e)}")
+                                # Fallback roast
+                                roast = f"  🎭 {query} has been in {total_db} breaches - quite the digital adventurer!"
                             
-                            summary += f"  {roast}\n"
+                            summary += f"{roast}\n"
                         
                         # Add top 3 databases
                         db_count = 0
@@ -691,39 +729,52 @@ async def _batch_search_leak_impl(requests: list[str], limit: int = 100, lang: s
                         summary += f"  • No results found - this one's actually good at keeping secrets! 🤐\n"
                     summary += "\n"
             
-#            print(f"📤 [DEBUG] Returning simple string response: {summary[:200]}...")
-#
             return summary
     except httpx.HTTPStatusError as e:
-#        print(f"❌ [DEBUG] HTTP error: {e.response.status_code} - {str(e)}")
+        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+        logger.error(f"🔒 Response headers: {dict(e.response.headers)}")
         error_data = {
             "error": True,
-            "message": f"Search service unavailable: {e.response.status_code}",
+            "message": error_msg,
             "details": str(e)
         }
         return json.dumps(error_data)
-    except Exception as e:
-#        print(f"❌ [DEBUG] Unexpected error: {str(e)}")
+    except httpx.TimeoutException as e:
+        error_msg = f"Search request timeout: {str(e)}"
+        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
         error_data = {
             "error": True,
-            "message": f"Search request failed: {str(e)}",
+            "message": error_msg,
+            "details": None
+        }
+        return json.dumps(error_data)
+    except httpx.ConnectError as e:
+        error_msg = f"Search service connection failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+        error_data = {
+            "error": True,
+            "message": error_msg,
+            "details": None
+        }
+        return json.dumps(error_data)
+    except Exception as e:
+        error_msg = f"Search request failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+        logger.error(f"🔒 Error type: {type(e).__name__}")
+        error_data = {
+            "error": True,
+            "message": error_msg,
             "details": None
         }
         return json.dumps(error_data)
 
 async def _calculate_complexity_impl(query: str, limit: int = 100) -> dict:
-#    print(f"\n🔍 [DEBUG] calculate_complexity called with parameters:")
-#    print(f"   - query: '{query}'")
-#    print(f"   - limit: {limit}")
-    import re
     query_clean = re.sub(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', '', query)
     query_clean = re.sub(r'\d{4}[/-]\d{1,2}[/-]\d{1,2}', '', query_clean)
-#    print(f"📝 [DEBUG] After date removal: '{query_clean}'")
     words = query_clean.split()
     words = [word for word in words if len(word) >= 4]
-#    print(f"📝 [DEBUG] After short word removal: {words}")
     words = [word for word in words if not (word.isdigit() and len(word) < 6)]
-#    print(f"📝 [DEBUG] After short number removal: {words}")
     word_count = len(words)
     if word_count == 1:
         complexity = 1
@@ -733,9 +784,7 @@ async def _calculate_complexity_impl(query: str, limit: int = 100) -> dict:
         complexity = 16
     else:
         complexity = 40
-#    print(f"📊 [DEBUG] Word count: {word_count}, Complexity: {complexity}")
     cost = (5 + math.sqrt(limit * complexity)) / 5000
-#    print(f"💰 [DEBUG] Estimated cost: ${cost:.6f}")
     return {
         "original_query": query,
         "cleaned_words": words,
@@ -747,34 +796,23 @@ async def _calculate_complexity_impl(query: str, limit: int = 100) -> dict:
     }
 
 # --- Decorated tool functions ---
-@leakosint_toolkit.tool(
-    name="search_leak",
-    description="Search for data leaks and personal information in leaked databases. This tool can search for emails, names, phone numbers, and other personal information.",
-    annotations={
-        "request": "The search query (email, name, phone number, etc.)",
-        "limit": "Search limit (100-10000, default 100)",
-        "lang": "Language code for results (default 'en')",
-        "type": "Report type: json, short, html (default 'json')",
-    }
-)
-async def search_leak(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
-    #print(f"\n🔧 [TOOLKIT DEBUG] search_leak decorated function called")
-    #print(f"🔧 [TOOLKIT DEBUG] Parameters: request='{request}', limit={limit}, lang='{lang}', report_type='{report_type}'")
-    
-    summary = await _search_leak_impl(request, limit, lang, report_type)
-    #print(f"🔧 [TOOLKIT DEBUG] _search_leak_impl returned: type={type(summary).__name__}, length={len(summary)}")
-    
-    #print(f"🔧 [TOOLKIT DEBUG] About to return simple string to framework")
-    #print(f"🔧 [TOOLKIT DEBUG] String length: {len(summary)}")
-    #print(f"🔧 [TOOLKIT DEBUG] String preview: {repr(summary[:200])}")
-    
-    try:
-        #print(f"🔧 [TOOLKIT DEBUG] Returning simple string to framework...")
-        return summary
-    except Exception as e:
-        #print(f"❌ [TOOLKIT DEBUG] Exception when returning string: {str(e)}")
-        #print(f"❌ [TOOLKIT DEBUG] Exception type: {type(e).__name__}")
-        raise
+# @leakosint_toolkit.tool(
+#     name="search_leak",
+#     description="Search for data leaks and personal information in leaked databases. This tool can search for emails, names, phone numbers, and other personal information.",
+#     annotations={
+#         "request": "The search query (email, name, phone number, etc.)",
+#         "limit": "Search limit (100-10000, default 100)",
+#         "lang": "Language code for results (default 'en')",
+#         "type": "Report type: json, short, html (default 'json')",
+#     }
+# )
+# async def search_leak(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> str:
+#     summary = await _search_leak_impl(request, limit, lang, report_type)
+#     
+#     try:
+#         return summary
+#     except Exception as e:
+#         raise
 
 @leakosint_toolkit.tool(
     name="batch_search_leak",
@@ -841,9 +879,6 @@ async def get_bio(query: str) -> list[str]:
 
 # Import the modular sequential thinking implementation
 from app.sequential_thinking_module import SequentialThinkingModule, process_sequential_thought, create_thinking_session
-
-# Import the intelligent OSINT investigator
-from app.intelligent_osint_investigator import intelligent_osint_investigation, IntelligentOSINTInvestigator
 
 # Global sequential thinking server instance using the modular implementation
 thinking_server = SequentialThinkingModule()
@@ -955,7 +990,7 @@ compose.mount(leakosint_toolkit, prefix="leakosint")
 compose.mount(sequential_thinking_toolkit, prefix="sequential_thinking")
 
 # Try registering the tool directly with compose as a test
-@compose.tool(
+@leakosint_toolkit.tool(
     name="roast_user_with_sequential_thinking",
     description="Create a hilarious roast of the user based on their data breach findings using sequential thinking. This tool analyzes the user's exposed data and crafts personalized, witty roasts that highlight their digital footprint in a humorous and friendly way.",
     annotations={
@@ -965,13 +1000,19 @@ compose.mount(sequential_thinking_toolkit, prefix="sequential_thinking")
     }
 )
 async def roast_user_with_sequential_thinking(email: str, roast_style: str = "friendly", include_location: bool = True) -> str:
-    """Roast the user based on their data breach findings using sequential thinking, using the LLM for creativity."""
-    breach_data = await _search_leak_impl(email, 100, "en", "json")
+    """Roast the user based on their data breach findings using sequential thinking, using the LLM for creativity. Now also returns a fun findings summary before the roast."""
+    # Get raw JSON data instead of formatted string
+    breach_data = await _get_raw_leak_data(email, 100, "en", "json")
     try:
-        breach_json = json.loads(breach_data)
+        # breach_data is already a dict, no need to parse JSON
+        breach_json = breach_data
     except:
         return "Sorry, couldn't find any juicy data to roast you with! Maybe you're actually good at keeping secrets? 🤔"
     breach_count = len(breach_json.get('List', {}))
+    
+    # Debug logging
+    logger.info(f"🔍 Roast function called for {email}, found {breach_count} breaches")
+    
     # Compose the roast prompt
     prompt = f"Write a {roast_style} roast for a user who has been in {breach_count} data breaches. Make it funny, original, and creative."
     if include_location:
@@ -986,7 +1027,27 @@ async def roast_user_with_sequential_thinking(email: str, roast_style: str = "fr
             pass
     prompt += " End with a light security tip."
     roast = await generate_roast_with_llm(prompt, temperature=settings.llm_temperature)
-    return roast
+    
+    # --- Patch: Add findings presentation before the roast ---
+    try:
+        investigator = IntelligentOSINTInvestigator()
+        # Use the structured parser instead of LLM extraction
+        discovered_info = investigator._parse_structured_osint(breach_json)
+        formatted_data = investigator._format_discovered_data(discovered_info)
+        findings = investigator._format_findings_for_user(discovered_info, formatted_data)
+        
+        # Debug logging
+        logger.info(f"📊 Generated findings presentation with {len(findings)} characters")
+        logger.info(f"🎭 Generated roast with {len(roast)} characters")
+        
+        final_result = f"{findings}\n{roast}"
+        logger.info(f"🔍 Final result length: {len(final_result)} characters")
+        
+        return final_result
+    except Exception as e:
+        logger.error(f"❌ Error generating findings presentation: {str(e)}")
+        # Fallback to just the roast if findings generation fails
+        return roast
 
 async def generate_roast_with_llm(prompt: str, temperature: float = 0.8) -> str:
     """Call the LLM to generate a roast with the given prompt and temperature."""
@@ -1001,8 +1062,6 @@ async def generate_roast_with_llm(prompt: str, temperature: float = 0.8) -> str:
         "temperature": temperature,
         "max_tokens": 256
     }
-    print(f"[DEBUG] LLM roast prompt: {prompt}")
-    print(f"[DEBUG] LLM temperature: {temperature}")
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
@@ -1010,31 +1069,65 @@ async def generate_roast_with_llm(prompt: str, temperature: float = 0.8) -> str:
         # OpenAI-style response
         return data["choices"][0]["message"]["content"].strip()
 
-@compose.tool(
-    name="intelligent_osint_investigation",
-    description="Perform intelligent OSINT investigation using sequential thinking. This tool analyzes initial search results and dynamically decides what additional searches to perform based on discovered information (emails, phone numbers, names, usernames, IP addresses, etc.).",
-    annotations={
-        "initial_query": "The initial search query (email, name, phone number, etc.)",
-        "max_additional_searches": "Maximum number of additional searches to perform (default 5)",
-    }
-)
-async def intelligent_osint_investigation_tool(initial_query: str, max_additional_searches: int = 5) -> dict:
-    """Perform intelligent OSINT investigation using sequential thinking"""
+async def generate_roast_for_breach_data(breach_count: int, roast_style: str, discovered_data: Optional[dict] = None, location_data: Optional[dict] = None) -> str:
+    """Helper function to generate LLM roasts with comprehensive data context."""
     try:
-        results = await intelligent_osint_investigation(initial_query, max_additional_searches)
-        return {
-            "success": True,
-            "investigation_results": results,
-            "summary": f"Intelligent investigation completed. Found {len(results['comprehensive_discovered_info']['emails'])} emails, {len(results['comprehensive_discovered_info']['phone_numbers'])} phones, {len(results['comprehensive_discovered_info']['full_names'])} names, {len(results['comprehensive_discovered_info']['usernames'])} usernames, {len(results['comprehensive_discovered_info']['ip_addresses'])} IPs."
-        }
+        # Build comprehensive prompt for LLM
+        prompt = f"Write a {roast_style} roast for a user who has been in {breach_count} data breaches. Make it funny, original, and creative."
+        
+        # Add specific data details to make the roast more personalized
+        if discovered_data:
+            if discovered_data.get("passwords"):
+                prompt += f" They have {len(discovered_data['passwords'])} exposed passwords."
+            if discovered_data.get("emails"):
+                prompt += f" Their email appears in {len(discovered_data['emails'])} different contexts."
+            if discovered_data.get("sites"):
+                prompt += f" They've been compromised on {len(discovered_data['sites'])} different websites."
+        
+        # Add location-based roasting if available
+        if location_data and (location_data.get("cities") or location_data.get("countries")):
+            locations = location_data.get("cities", []) + location_data.get("countries", [])
+            if locations:
+                unique_locations = list(set(locations))[:3]  # Top 3 unique locations
+                prompt += f" Their digital trail spans {len(unique_locations)} locations: {', '.join(unique_locations)}."
+        
+        prompt += " End with a light security tip. Keep it entertaining and use emojis."
+        
+        # Generate roast using LLM
+        roast = await generate_roast_with_llm(prompt, temperature=settings.llm_temperature)
+        logger.info(f"✅ Successfully generated LLM roast for {breach_count} breaches with style '{roast_style}'")
+        return roast
+        
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "investigation_results": None
-        }
+        logger.error(f"Failed to generate LLM roast: {str(e)}")
+        # Fallback to a simple roast if LLM fails
+        return f"🎭 Well, I found some interesting stuff about your digital footprint in {breach_count} data breaches, but my roasting skills are having a moment. Let's just say your data has been on quite the adventure! 😄\n\n💡 But seriously, you might want to change some passwords and enable two-factor authentication! 🔐"
 
-@compose.tool(
+# @compose.tool(
+#     name="intelligent_osint_investigation",
+#     description="Perform intelligent OSINT investigation using sequential thinking. This tool analyzes initial search results and dynamically decides what additional searches to perform based on discovered information (emails, phone numbers, names, usernames, IP addresses, etc.).",
+#     annotations={
+#         "initial_query": "The initial search query (email, name, phone number, etc.)",
+#         "max_additional_searches": "Maximum number of additional searches to perform (default 5)",
+#     }
+# )
+# async def intelligent_osint_investigation_tool(initial_query: str, max_additional_searches: int = 5) -> dict:
+#     """Perform intelligent OSINT investigation using sequential thinking"""
+#     try:
+#         results = await intelligent_osint_investigation(initial_query, max_additional_searches)
+#         return {
+#             "success": True,
+#             "investigation_results": results,
+#             "summary": f"Intelligent investigation completed. Found {len(results['comprehensive_discovered_info']['emails'])} emails, {len(results['comprehensive_discovered_info']['phone_numbers'])} phones, {len(results['comprehensive_discovered_info']['full_names'])} names, {len(results['comprehensive_discovered_info']['usernames'])} usernames, {len(results['comprehensive_discovered_info']['ip_addresses'])} IPs."
+#         }
+#     except Exception as e:
+#         return {
+#             "success": False,
+#             "error": str(e),
+#             "investigation_results": None
+#         }
+
+@leakosint_toolkit.tool(
     name="search_user_data",
     description="Search for user data leaks and personal information using intelligent investigation. This tool automatically performs comprehensive analysis that discovers and searches for additional information found in initial results (emails, phone numbers, names, usernames, IP addresses, etc.).",
     annotations={
@@ -1044,24 +1137,36 @@ async def intelligent_osint_investigation_tool(initial_query: str, max_additiona
 )
 async def search_user_data_tool(query: str, max_additional_searches: int = 5) -> dict:
     """Search for user data using intelligent OSINT investigation"""
+    logger.info(f"🔍 Starting intelligent OSINT investigation for: {query}")
     try:
         results = await intelligent_osint_investigation(query, max_additional_searches)
+        logger.info(f"✅ Intelligent OSINT investigation complete for: {query}")
+        
+        # Add debug logging for the results
+        if results and 'formatted_data' in results:
+            formatted_data = results['formatted_data']
+            logger.info(f"📊 Found data: {formatted_data}")
+        
+        # Extract the comprehensive discovered info from formatted_data
+        comprehensive_discovered_info = results.get('formatted_data', {}).get('detailed_data', {})
+        
         return {
             "success": True,
             "investigation_results": results,
-            "summary": f"Intelligent investigation completed for '{query}'. Found {len(results['comprehensive_discovered_info']['emails'])} emails, {len(results['comprehensive_discovered_info']['phone_numbers'])} phones, {len(results['comprehensive_discovered_info']['full_names'])} names, {len(results['comprehensive_discovered_info']['usernames'])} usernames, {len(results['comprehensive_discovered_info']['ip_addresses'])} IPs.",
-            "comprehensive_discovered_info": results['comprehensive_discovered_info'],
-            "search_history": results['search_history'],
-            "additional_searches_performed": results['additional_searches_performed']
+            "summary": f"Intelligent investigation completed for '{query}'. Found {len(comprehensive_discovered_info.get('emails', []))} emails, {len(comprehensive_discovered_info.get('phone_numbers', []))} phones, {len(comprehensive_discovered_info.get('full_names', []))} names, {len(comprehensive_discovered_info.get('usernames', []))} usernames, {len(comprehensive_discovered_info.get('ip_addresses', []))} IPs.",
+            "comprehensive_discovered_info": comprehensive_discovered_info,
+            "search_history": results.get('search_history', []),
+            "additional_searches_performed": results.get('additional_searches_performed', 0)
         }
     except Exception as e:
+        logger.error(f"❌ Error in search_user_data_tool for {query}: {str(e)}")
         return {
             "success": False,
             "error": str(e),
             "investigation_results": None
         }
 
-@compose.tool(
+@leakosint_toolkit.tool(
     name="leakosint_search_leak_direct",
     description="Search for data leaks and personal information in leaked databases. This tool can search for emails, names, phone numbers, and other personal information.",
     annotations={
@@ -1072,36 +1177,39 @@ async def search_user_data_tool(query: str, max_additional_searches: int = 5) ->
     }
 )
 async def search_leak_direct(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict:
-#    print(f"\n🔧 [DIRECT DEBUG] search_leak_direct called")
-#    print(f"🔧 [DIRECT DEBUG] Parameters: request='{request}', limit={limit}, lang='{lang}', report_type='{report_type}'")
+    logger.info(f"🔍 Direct search called for: {request}")
     
-    summary = await _search_leak_impl(request, limit, lang, report_type)
-#    print(f"🔧 [DIRECT DEBUG] _search_leak_impl returned: type={type(summary).__name__}, length={len(summary)}")
-    
-    # Create the return dictionary
-    result_dict = {
-        "success": True,
-        "results": summary,
-        "query": request,
-        "total_results": summary.count("results") if "results" in summary else 0
-    }
-    
-#    print(f"🔧 [DIRECT DEBUG] Created result_dict:")
-#    print(f"🔧 [DIRECT DEBUG]   - type: {type(result_dict).__name__}")
-#    print(f"🔧 [DIRECT DEBUG]   - keys: {list(result_dict.keys())}")
-#    print(f"🔧 [DIRECT DEBUG]   - success: {result_dict['success']}")
-#    print(f"🔧 [DIRECT DEBUG]   - query: {result_dict['query']}")
-#    print(f"🔧 [DIRECT DEBUG]   - total_results: {result_dict['total_results']}")
-#    print(f"🔧 [DIRECT DEBUG]   - results length: {len(result_dict['results'])}
-#    print(f"🔧 [DIRECT DEBUG] About to return result_dict to framework")
+    # Validate required parameters
+    if not request or request.strip() == "":
+        logger.error("❌ Empty request parameter provided to search_leak_direct")
+        return {
+            "success": False,
+            "error": "Request parameter is required and cannot be empty",
+            "query": request,
+            "total_results": 0
+        }
     
     try:
-#        print(f"🔧 [DIRECT DEBUG] Returning result_dict to framework...")
+        summary = await _search_leak_impl(request, limit, lang, report_type)
+        logger.info(f"✅ Direct search completed for: {request}")
+        
+        # Create the return dictionary
+        result_dict = {
+            "success": True,
+            "results": summary,
+            "query": request,
+            "total_results": summary.count("results") if "results" in summary else 0
+        }
+        
         return result_dict
     except Exception as e:
-#        print(f"❌ [DIRECT DEBUG] Exception when returning result_dict: {str(e)}")
-#        print(f"❌ [DIRECT DEBUG] Exception type: {type(e).__name__}")
-        raise
+        logger.error(f"❌ Error in search_leak_direct for {request}: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "query": request,
+            "total_results": 0
+        }
 
 # --- Location extraction and analysis functions ---
 import re
@@ -1115,7 +1223,6 @@ async def _geolocate_ip(ip: str) -> dict:
             response = await client.get(f"https://ipapi.co/{ip}/json/")
             if response.status_code == 200:
                 data = response.json()
-                print(f"🔧 [DIRECT DEBUG] geolocation data: {data}")
                 return {
                     "ip": ip,
                     "country": data.get("country_name", "Unknown"),
@@ -1128,7 +1235,6 @@ async def _geolocate_ip(ip: str) -> dict:
                     "success": True
                 }
             else:
-                print(f"🔧 [DIRECT DEBUG] geolocation data: {response.status_code}")
                 return {"ip": ip, "success": False, "error": f"HTTP {response.status_code}"}
     except Exception as e:
         return {"ip": ip, "success": False, "error": str(e)}

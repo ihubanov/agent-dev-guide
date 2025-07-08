@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse, JSONResponse
-from app.oai_models import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionMessageParam, ChatCompletionStreamResponse, random_uuid
+from app.oai_models import ChatCompletionRequest, ChatCompletionResponse, ChatCompletionMessageParam, ChatCompletionStreamResponse, ChatCompletionResponseStreamChoice, DeltaMessage, random_uuid
 from app.oai_streaming import create_streaming_response, ChatCompletionResponseBuilder
 from app.tools import compose as compose_mcp, get_bio
 from app.utils import (
@@ -9,6 +9,7 @@ from app.utils import (
     execute_openai_compatible_toolcall,
     refine_chat_history,
     refine_assistant_message,
+    check_ignore_list,
 )
 import os
 from typing import Optional, Any, AsyncGenerator
@@ -29,6 +30,12 @@ async def get_system_prompt(newest_message: Optional[str]) -> str:
     with open("system_prompt.txt", "r") as f:
         system_prompt = f.read()
 
+    # Add ignore list information to system prompt
+    if settings.ignore_list:
+        ignore_list_str = "\n".join([f"- {item}" for item in settings.ignore_list])
+        system_prompt += f"\n\nIGNORE LIST (entities to refuse information about):\n{ignore_list_str}"
+        logger.info(f"Ignore list loaded with {len(settings.ignore_list)} items")
+
     if newest_message is None:
         return system_prompt
 
@@ -45,16 +52,19 @@ async def get_system_prompt(newest_message: Optional[str]) -> str:
     return system_prompt
 
 def get_newest_message(messages: list[ChatCompletionMessageParam]) -> str:
-    if isinstance(messages[-1].get("content", ""), str):
-        return messages[-1].get("content", "")
+    content = messages[-1].get("content", "")
     
-    elif isinstance(messages[-1].get("content", []), list):
-        for item in messages[-1].get("content", []):
-            if item.get("type") == "text":
+    if isinstance(content, str):
+        return content
+    
+    elif isinstance(content, list):
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
                 return item.get("text", "")
+        return ""  # Return empty string if no text content found
 
     else:
-        raise ValueError(f"Invalid message content: {messages[-1].get('content')}")
+        raise ValueError(f"Invalid message content: {content}")
     
 
 async def wrap_toolcall_request(uuid: str, fn_name: str, args: dict[str, Any]) -> ChatCompletionStreamResponse:
@@ -81,9 +91,9 @@ Arguments:
         created=int(time.time()),
         model='unspecified',
         choices=[
-            dict(
+            ChatCompletionResponseStreamChoice(
                 index=0,
-                delta=dict(
+                delta=DeltaMessage(
                     content=template,
                     role='tool'
                 ),
@@ -92,12 +102,19 @@ Arguments:
     )
     
 async def handle_request(request: ChatCompletionRequest) -> AsyncGenerator[ChatCompletionStreamResponse | ChatCompletionResponse, None]:
-    messages = request.messages
-    assert len(messages) > 0, "No messages in the request"
+    original_messages: list[ChatCompletionMessageParam] = request.messages
+    assert len(original_messages) > 0, "No messages in the request"
  
-    newest_message = get_newest_message(messages)
+    newest_message = get_newest_message(original_messages)
+    
+    # Check if query contains ignored entities
+    if settings.ignore_list:
+        matched_entities = check_ignore_list(newest_message, settings.ignore_list)
+        if matched_entities:
+            logger.info(f"🔒 Query contains ignored entities: {matched_entities}")
+    
     system_prompt = await get_system_prompt(newest_message)
-    messages: list[dict[str, Any]] = refine_chat_history(messages, system_prompt)
+    messages: list[dict[str, Any]] = refine_chat_history([dict(msg) if isinstance(msg, dict) else msg for msg in original_messages], system_prompt)  # type: ignore
 
     tools = await compose_mcp._mcp_list_tools()
     oai_tools = convert_mcp_tools_to_openai_format(tools)
@@ -128,10 +145,11 @@ async def handle_request(request: ChatCompletionRequest) -> AsyncGenerator[ChatC
         )
 
         async for chunk in streaming_iter:
-            completion_builder.add_chunk(chunk)
+            if isinstance(chunk, ChatCompletionStreamResponse):
+                completion_builder.add_chunk(chunk)
 
-            if chunk.choices[0].delta.content:
-                yield chunk
+                if chunk.choices[0].delta.content:
+                    yield chunk
 
         completion = await completion_builder.build()
         messages.append(refine_assistant_message(completion.choices[0].message))
@@ -142,27 +160,26 @@ async def handle_request(request: ChatCompletionRequest) -> AsyncGenerator[ChatC
 
             logger.info(f"Executing tool call: {_name} with args: {_args}")
             
-            # Debug: Print before tool call execution
-#            logger.info(f"🔍 [DEBUG] About to execute tool call: {_name}")
+            # Validate tool call arguments
+            if not _args:
+                logger.warning(f"⚠️ Empty arguments for tool call: {_name}")
             
             _result = await execute_openai_compatible_toolcall(_name, _args, compose_mcp)
-            
-            # Debug: Print the raw result immediately after execution
-#            logger.info(f"🔍 [DEBUG] Raw result from tool call {_name}:")
-#            logger.info(f"🔍 [DEBUG]   - Type: {type(_result).__name__}")
-#            logger.info(f"🔍 [DEBUG]   - Value: {repr(_result)}")
-#            logger.info(f"🔍 [DEBUG]   - Length: {len(_result) if hasattr(_result, '__len__') else 'N/A'}")
-            
-            #logger.info(f"Tool call {_name} result: {_result}")
-            
-            # Debug: Print after the result is logged
-#            logger.info(f"🔍 [DEBUG] Result has been logged, about to refine and add to messages")
+            _result = refine_mcp_response(_result)
+
+            # Log the result for debugging
+            if isinstance(_result, str):
+                logger.info(f"📤 Tool {_name} returned string result (length: {len(_result)})")
+            elif isinstance(_result, list):
+                logger.info(f"📤 Tool {_name} returned list result (length: {len(_result)})")
+            else:
+                logger.info(f"📤 Tool {_name} returned {type(_result).__name__} result")
 
             messages.append(
                 {
                     "role": "tool",
                     "tool_call_id": _id,
-                    "content": refine_mcp_response(_result)
+                    "content": _result
                 }
             )
 
@@ -193,10 +210,10 @@ async def prompt(request: ChatCompletionRequest):
 
                 if isinstance(chunk, ChatCompletionStreamResponse):
                     data = chunk.model_dump_json()
-                    yield "data: " + data + "\n\n"
+                    yield ("data: " + data + "\n\n").encode('utf-8')
 
             logger.info(f"Request {req_id} - TTFT: {ttft:.2f}s, TPS: {tps:.2f} tokens/s")
-            yield "data: [DONE]\n\n"
+            yield "data: [DONE]\n\n".encode('utf-8')
 
         return StreamingResponse(to_bytes(generator), media_type="text/event-stream")
     

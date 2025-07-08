@@ -40,22 +40,7 @@ class ChatCompletionResponseBuilder:
 
         elif choice.delta.tool_calls:
             for tool_call in choice.delta.tool_calls:
-                # call_idx = tool_call.index
-
-                # if call_idx not in self.calls_by_idx:
-                #     self.calls_by_idx[call_idx] = {
-                #         "id": tool_call.id,
-                #         "type": tool_call.type,
-                #         "function": {
-                #             "name": tool_call.function.name,
-                #             "arguments": tool_call.function.arguments or ""
-                #         }
-                #     }
-
-                # else:
-                #     self.calls_by_idx[call_idx]["function"]["arguments"] += tool_call.function.arguments
-                
-                if tool_call.function.name is not None:
+                if tool_call.function is not None and tool_call.function.name is not None:
                     self.calls.append({
                         "id": "call_" + random_uuid()[-20:],
                         "type": tool_call.type,
@@ -65,7 +50,7 @@ class ChatCompletionResponseBuilder:
                         }
                     })
 
-                elif len(self.calls) > 0:
+                elif len(self.calls) > 0 and tool_call.function is not None:
                     self.calls[-1]["function"]["arguments"] += tool_call.function.arguments
 
         self.finished_reason = choice.finish_reason
@@ -112,7 +97,7 @@ async def create_streaming_response(
     base_url: str,
     api_key: str,
     **payload_to_call
-) -> AsyncGenerator[ChatCompletionStreamResponse, None]:
+) -> AsyncGenerator[ChatCompletionStreamResponse | ErrorResponse, None]:
 
     async with httpx.AsyncClient() as client:
         async with client.stream(
