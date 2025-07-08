@@ -1,7 +1,7 @@
 from typing import TypeVar, Generator, Union, List, Any, Dict
 import logging
 # from mcp.types import CallToolResult, TextContent, Tool, EmbeddedResource # CallToolResult and Tool are unused
-from mcp.types import TextContent, EmbeddedResource # Tool # Tool is unused
+from mcp.types import TextContent, EmbeddedResource, Tool
 from pydantic import BaseModel
 import fastmcp
 import re
