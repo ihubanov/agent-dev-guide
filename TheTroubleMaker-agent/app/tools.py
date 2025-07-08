@@ -15,7 +15,7 @@ import httpx
 import json
 import math
 from app.configs import settings
-from datetime import datetime
+# from datetime import datetime # Unused import
 from app.intelligent_osint_investigator import IntelligentOSINTInvestigator, DiscoveredInfo, intelligent_osint_investigation
 
 logger = logging.getLogger(__name__)
@@ -838,8 +838,8 @@ async def batch_search_leak(requests: list[str], limit: int = 100, lang: str = "
 async def calculate_complexity(query: str, limit: int = 100) -> dict:
     return await _calculate_complexity_impl(query, limit)
 
-import os
-import json
+# import os # Unused import, os is already imported above
+# import json # Unused import, json is already imported above
 
 def load_bio() -> dict:
     if not os.path.exists("bio.json"):
@@ -1212,7 +1212,7 @@ async def search_leak_direct(request: str, limit: int = 100, lang: str = "en", r
         }
 
 # --- Location extraction and analysis functions ---
-import re
+# import re # Unused import, re is already imported above
 from typing import Dict, List, Optional, Tuple
 
 async def _geolocate_ip(ip: str) -> dict:
@@ -1339,10 +1339,10 @@ async def _analyze_location_data(location_data: dict) -> dict:
     
     return analysis
 
-async def _format_location_report(location_data: dict, threat_analysis: dict) -> str:
-    """Format location information into dramatic report"""
-    # Check if we actually have any location data
-    has_location_data = (
+# async def _format_location_report(location_data: dict, threat_analysis: dict) -> str: # Unused function
+#     """Format location information into dramatic report"""
+#     # Check if we actually have any location data
+#     has_location_data = (
         location_data.get("ip_details") or 
         location_data.get("ips") or 
         location_data.get("addresses") or 

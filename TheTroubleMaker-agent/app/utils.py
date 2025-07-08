@@ -1,6 +1,7 @@
 from typing import TypeVar, Generator, Union, List, Any, Dict
 import logging
-from mcp.types import CallToolResult, TextContent, Tool, EmbeddedResource
+# from mcp.types import CallToolResult, TextContent, Tool, EmbeddedResource # CallToolResult and Tool are unused
+from mcp.types import TextContent, EmbeddedResource # Tool # Tool is unused
 from pydantic import BaseModel
 import fastmcp
 import re
@@ -9,27 +10,27 @@ import datetime
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
-def batching(generator: Union[Generator[T, None, None], List[T]], batch_size: int) -> Generator[list[T], None, None]:
+# def batching(generator: Union[Generator[T, None, None], List[T]], batch_size: int) -> Generator[list[T], None, None]: # Unused function
 
-    if isinstance(generator, List):
-        for i in range(0, len(generator), batch_size):
-            yield generator[i:i+batch_size]
+#     if isinstance(generator, List):
+#         for i in range(0, len(generator), batch_size):
+#             yield generator[i:i+batch_size]
 
-    elif isinstance(generator, Generator) or hasattr(generator, "__iter__"):
-        batch = []
+#     elif isinstance(generator, Generator) or hasattr(generator, "__iter__"):
+#         batch = []
 
-        for item in generator:
-            batch.append(item)
+#         for item in generator:
+#             batch.append(item)
 
-            if len(batch) == batch_size:
-                yield batch
-                batch = []
+#             if len(batch) == batch_size:
+#                 yield batch
+#                 batch = []
 
-        if batch:
-            yield batch
+#         if batch:
+#             yield batch
 
-    else:
-        raise ValueError("Generator must be a generator or a list")
+#     else:
+#         raise ValueError("Generator must be a generator or a list")
     
 
 def convert_mcp_tools_to_openai_format(
