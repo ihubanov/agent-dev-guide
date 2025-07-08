@@ -70,114 +70,114 @@ class IntelligentOSINTInvestigator:
     
     def __init__(self):
         self.thinking_module = SequentialThinkingModule()
-        # self.discovered_info = DiscoveredInfo() # Unused instance variable
+        self.discovered_info = DiscoveredInfo()
         self.search_history = []
-        # self.investigation_results = {} # Unused instance variable
+        self.investigation_results = {}
         
-    # def _extract_emails(self, text: str) -> Set[str]: # Unused method
-    #     """Extract email addresses from text"""
-    #     email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-    #     return set(re.findall(email_pattern, text))
+    def _extract_emails(self, text: str) -> Set[str]:
+        """Extract email addresses from text"""
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        return set(re.findall(email_pattern, text))
     
-    # def _extract_phone_numbers(self, text: str) -> Set[str]: # Unused method
-    #     """Extract phone numbers from text"""
-    #     # Various phone number patterns
-    #     patterns = [
-    #         r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US format
-    #         r'\b\+1[-.]?\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US with country code
-    #         r'\b\d{10,15}\b',  # Generic long numbers
-    #     ]
-    #     phones = set()
-    #     for pattern in patterns:
-    #         phones.update(re.findall(pattern, text))
-    #     return phones
+    def _extract_phone_numbers(self, text: str) -> Set[str]:
+        """Extract phone numbers from text"""
+        # Various phone number patterns
+        patterns = [
+            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US format
+            r'\b\+1[-.]?\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # US with country code
+            r'\b\d{10,15}\b',  # Generic long numbers
+        ]
+        phones = set()
+        for pattern in patterns:
+            phones.update(re.findall(pattern, text))
+        return phones
     
-    # def _extract_names(self, text: str) -> Set[str]: # Unused method
-    #     """Extract potential full names from text"""
-    #     # Look for patterns like "First Last" or "First M. Last"
-    #     name_pattern = r'\b[A-Z][a-z]+ [A-Z][a-z]+\b'
-    #     names = set(re.findall(name_pattern, text))
+    def _extract_names(self, text: str) -> Set[str]:
+        """Extract potential full names from text"""
+        # Look for patterns like "First Last" or "First M. Last"
+        name_pattern = r'\b[A-Z][a-z]+ [A-Z][a-z]+\b'
+        names = set(re.findall(name_pattern, text))
         
-    #     # Also look for patterns with middle initials
-    #     name_with_middle_pattern = r'\b[A-Z][a-z]+ [A-Z]\. [A-Z][a-z]+\b'
-    #     names.update(re.findall(name_with_middle_pattern, text))
+        # Also look for patterns with middle initials
+        name_with_middle_pattern = r'\b[A-Z][a-z]+ [A-Z]\. [A-Z][a-z]+\b'
+        names.update(re.findall(name_with_middle_pattern, text))
         
-    #     return names
+        return names
     
-    # def _extract_usernames(self, text: str) -> Set[str]: # Unused method
-    #     """Extract potential usernames from text"""
-    #     # Look for common username patterns
-    #     username_patterns = [
-    #         r'\b[A-Za-z0-9_]{3,20}\b',  # Basic username pattern
-    #         r'@([A-Za-z0-9_]{3,20})',   # Twitter-style handles
-    #     ]
-    #     usernames = set()
-    #     for pattern in username_patterns:
-    #         matches = re.findall(pattern, text)
-    #         # Filter out common words that aren't usernames
-    #         filtered = [m for m in matches if len(m) >= 3 and not m.isdigit()]
-    #         usernames.update(filtered)
-    #     return usernames
+    def _extract_usernames(self, text: str) -> Set[str]:
+        """Extract potential usernames from text"""
+        # Look for common username patterns
+        username_patterns = [
+            r'\b[A-Za-z0-9_]{3,20}\b',  # Basic username pattern
+            r'@([A-Za-z0-9_]{3,20})',   # Twitter-style handles
+        ]
+        usernames = set()
+        for pattern in username_patterns:
+            matches = re.findall(pattern, text)
+            # Filter out common words that aren't usernames
+            filtered = [m for m in matches if len(m) >= 3 and not m.isdigit()]
+            usernames.update(filtered)
+        return usernames
     
-    # def _extract_ip_addresses(self, text: str) -> Set[str]: # Unused method
-    #     """Extract IP addresses from text"""
-    #     ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-    #     return set(re.findall(ip_pattern, text))
+    def _extract_ip_addresses(self, text: str) -> Set[str]:
+        """Extract IP addresses from text"""
+        ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
+        return set(re.findall(ip_pattern, text))
     
-    # def _extract_social_media(self, text: str) -> Set[str]: # Unused method
-    #     """Extract social media handles and platforms"""
-    #     social_patterns = [
-    #         r'@([A-Za-z0-9_]{3,20})',  # Twitter/Instagram handles
-    #         r'facebook\.com/([A-Za-z0-9_.]+)',
-    #         r'twitter\.com/([A-Za-z0-9_]+)',
-    #         r'instagram\.com/([A-Za-z0-9_.]+)',
-    #         r'linkedin\.com/in/([A-Za-z0-9-]+)',
-    #     ]
-    #     social_media = set()
-    #     for pattern in social_patterns:
-    #         matches = re.findall(pattern, text)
-    #         social_media.update(matches)
-    #     return social_media
+    def _extract_social_media(self, text: str) -> Set[str]:
+        """Extract social media handles and platforms"""
+        social_patterns = [
+            r'@([A-Za-z0-9_]{3,20})',  # Twitter/Instagram handles
+            r'facebook\.com/([A-Za-z0-9_.]+)',
+            r'twitter\.com/([A-Za-z0-9_]+)',
+            r'instagram\.com/([A-Za-z0-9_.]+)',
+            r'linkedin\.com/in/([A-Za-z0-9-]+)',
+        ]
+        social_media = set()
+        for pattern in social_patterns:
+            matches = re.findall(pattern, text)
+            social_media.update(matches)
+        return social_media
     
-    # def _extract_websites(self, text: str) -> Set[str]: # Unused method
-    #     """Extract website domains from text"""
-    #     website_pattern = r'\b(?:https?://)?(?:www\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b'
-    #     return set(re.findall(website_pattern, text))
+    def _extract_websites(self, text: str) -> Set[str]:
+        """Extract website domains from text"""
+        website_pattern = r'\b(?:https?://)?(?:www\.)?([A-Za-z0-9.-]+\.[A-Za-z]{2,})\b'
+        return set(re.findall(website_pattern, text))
     
-    # async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo: # Unused method
-    #     """Parse breach data and extract all discoverable information using only the LLM."""
-    #     logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
-    #     if isinstance(breach_data, str):
-    #         try:
-    #             data = json.loads(breach_data)
-    #             logger.debug(f"[LLM-OSINT] Parsed string as JSON, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
-    #         except:
-    #             data = {"raw_text": breach_data}
-    #             logger.debug(f"[LLM-OSINT] Failed to parse as JSON, treating as raw text")
-    #     else:
-    #         data = breach_data
-    #         logger.debug(f"[LLM-OSINT] Data is already dict, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
-    #     raw_text = ""
-    #     if "raw_text" in data:
-    #         raw_text = data["raw_text"]
-    #         logger.debug(f"[LLM-OSINT] Found raw_text, length: {len(raw_text)}")
-    #     elif isinstance(data, dict) and "List" in data and isinstance(data["List"], dict):
-    #         logger.debug(f"[LLM-OSINT] Processing List data, databases: {len(data['List'])}")
-    #         for db_name, db_data in data["List"].items():
-    #             if isinstance(db_data, dict) and db_data.get("Data"):
-    #                 for data_item in db_data["Data"]:
-    #                     for v in data_item.values():
-    #                         if isinstance(v, str):
-    #                             raw_text += v + "\n"
-    #         logger.debug(f"[LLM-OSINT] Built raw_text from List data, length: {len(raw_text)}")
-    #     else:
-    #         logger.debug(f"[LLM-OSINT] No raw_text or List found in data")
-    #     if raw_text.strip():
-    #         logger.debug(f"[LLM-OSINT] Calling _extract_with_llm with text length: {len(raw_text)}")
-    #         return await self._extract_with_llm(raw_text)
-    #     else:
-    #         logger.debug(f"[LLM-OSINT] No raw_text to process, returning empty DiscoveredInfo")
-    #         return DiscoveredInfo()
+    async def _parse_breach_data(self, breach_data: Union[str, dict]) -> DiscoveredInfo:
+        """Parse breach data and extract all discoverable information using only the LLM."""
+        logger.debug(f"[LLM-OSINT] _parse_breach_data called with type: {type(breach_data)}")
+        if isinstance(breach_data, str):
+            try:
+                data = json.loads(breach_data)
+                logger.debug(f"[LLM-OSINT] Parsed string as JSON, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
+            except:
+                data = {"raw_text": breach_data}
+                logger.debug(f"[LLM-OSINT] Failed to parse as JSON, treating as raw text")
+        else:
+            data = breach_data
+            logger.debug(f"[LLM-OSINT] Data is already dict, keys: {list(data.keys()) if isinstance(data, dict) else 'not dict'}")
+        raw_text = ""
+        if "raw_text" in data:
+            raw_text = data["raw_text"]
+            logger.debug(f"[LLM-OSINT] Found raw_text, length: {len(raw_text)}")
+        elif isinstance(data, dict) and "List" in data and isinstance(data["List"], dict):
+            logger.debug(f"[LLM-OSINT] Processing List data, databases: {len(data['List'])}")
+            for db_name, db_data in data["List"].items():
+                if isinstance(db_data, dict) and db_data.get("Data"):
+                    for data_item in db_data["Data"]:
+                        for v in data_item.values():
+                            if isinstance(v, str):
+                                raw_text += v + "\n"
+            logger.debug(f"[LLM-OSINT] Built raw_text from List data, length: {len(raw_text)}")
+        else:
+            logger.debug(f"[LLM-OSINT] No raw_text or List found in data")
+        if raw_text.strip():
+            logger.debug(f"[LLM-OSINT] Calling _extract_with_llm with text length: {len(raw_text)}")
+            return await self._extract_with_llm(raw_text)
+        else:
+            logger.debug(f"[LLM-OSINT] No raw_text to process, returning empty DiscoveredInfo")
+            return DiscoveredInfo()
     
     async def _sequential_thinking_analysis(self, initial_query: str, discovered_info: DiscoveredInfo) -> Dict[str, Any]:
         """Use sequential thinking to analyze discovered info and decide on additional searches"""
@@ -598,10 +598,10 @@ class IntelligentOSINTInvestigator:
             results[ip] = geo
         return results
 
-    # def _analyze_geographic_distribution(self, discovered_info: DiscoveredInfo) -> Dict[str, Any]: # Unused method
-    #     """Analyze the geographic distribution of user's own leaked IP addresses."""
-    #     if not discovered_info.geolocations:
-    #         return {"countries": [], "total_countries": 0, "cities": [], "total_cities": 0, "regions": [], "total_regions": 0}
+    def _analyze_geographic_distribution(self, discovered_info: DiscoveredInfo) -> Dict[str, Any]:
+        """Analyze the geographic distribution of user's own leaked IP addresses."""
+        if not discovered_info.geolocations:
+            return {"countries": [], "total_countries": 0, "cities": [], "total_cities": 0, "regions": [], "total_regions": 0}
         
         countries = set()
         cities = set()
@@ -756,56 +756,56 @@ if __name__ == "__main__":
     
     asyncio.run(test_investigation()) 
 
-# async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict: # Unused function
-#     """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
-#     api_token = settings.leakosint_api_key
-#     if not api_token:
-#         logger.error("🔒 OSINT API Error: No API token configured")
-#         return {"error": True, "message": "OSINT search service is not configured."}
-#     if not request:
-#         logger.error("🔒 OSINT API Error: No search request provided")
-#         return {"error": True, "message": "No search request provided."}
+async def _get_raw_leak_data(request: str, limit: int = 100, lang: str = "en", report_type: str = "json") -> dict:
+    """Get raw breach data without formatting - for internal use by intelligent OSINT investigator"""
+    api_token = settings.leakosint_api_key
+    if not api_token:
+        logger.error("🔒 OSINT API Error: No API token configured")
+        return {"error": True, "message": "OSINT search service is not configured."}
+    if not request:
+        logger.error("🔒 OSINT API Error: No search request provided")
+        return {"error": True, "message": "No search request provided."}
     
-#     url = "https://leakosintapi.com/"
-#     data = {
-#         "token": api_token,
-#         "request": request,
-#         "limit": limit,
-#         "lang": lang,
-#         "type": report_type
-#     }
+    url = "https://leakosintapi.com/"
+    data = {
+        "token": api_token,
+        "request": request,
+        "limit": limit,
+        "lang": lang,
+        "type": report_type
+    }
     
-#     logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
+    logger.info(f"🔍 OSINT API Request: {request} (limit={limit}, lang={lang}, type={report_type})")
     
-#     try:
-#         async with httpx.AsyncClient(timeout=60.0) as client:
-#             response = await client.post(url, json=data)
-#             response.raise_for_status()
-#             result = response.json()
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, json=data)
+            response.raise_for_status()
+            result = response.json()
             
-#             if "Error code" in result:
-#                 error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
-#                 logger.error(f"🔒 OSINT API Error: {error_msg}")
-#                 return {"error": True, "message": error_msg}
+            if "Error code" in result:
+                error_msg = f"Search service error: {result.get('Error code', 'Unknown error')}"
+                logger.error(f"🔒 OSINT API Error: {error_msg}")
+                return {"error": True, "message": error_msg}
             
-#             logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
-#             return result
-#     except httpx.HTTPStatusError as e:
-#         error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
-#         logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
-#         return {"error": True, "message": error_msg}
-#     except httpx.TimeoutException as e:
-#         error_msg = f"Search request timeout: {str(e)}"
-#         logger.error(f"🔒 OSINT API Timeout: {error_msg}")
-#         return {"error": True, "message": error_msg}
-#     except httpx.ConnectError as e:
-#         error_msg = f"Search service connection failed: {str(e)}"
-#         logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
-#         return {"error": True, "message": error_msg}
-#     except Exception as e:
-#         error_msg = f"Search request failed: {str(e)}"
-#         logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
-#         return {"error": True, "message": error_msg}
+            logger.info(f"✅ OSINT API Success: {request} - {len(result.get('List', {}))} databases found")
+            return result
+    except httpx.HTTPStatusError as e:
+        error_msg = f"Search service unavailable: HTTP {e.response.status_code} - {str(e)}"
+        logger.error(f"🔒 OSINT API HTTP Error: {error_msg}")
+        return {"error": True, "message": error_msg}
+    except httpx.TimeoutException as e:
+        error_msg = f"Search request timeout: {str(e)}"
+        logger.error(f"🔒 OSINT API Timeout: {error_msg}")
+        return {"error": True, "message": error_msg}
+    except httpx.ConnectError as e:
+        error_msg = f"Search service connection failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Connection Error: {error_msg}")
+        return {"error": True, "message": error_msg}
+    except Exception as e:
+        error_msg = f"Search request failed: {str(e)}"
+        logger.error(f"🔒 OSINT API Unexpected Error: {error_msg}")
+        return {"error": True, "message": error_msg}
 
 async def _geolocate_ip(ip: str) -> dict:
     """Geolocate an IP address using a free API service"""
