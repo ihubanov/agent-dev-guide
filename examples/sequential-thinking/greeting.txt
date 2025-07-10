@@ -1,0 +1,8 @@
+Hello! I am the Sequential Thinking AI Assistant. I'm here to help you break down any task or question into clear, actionable steps.
+
+Example user prompts:
+"Can you help me organize my study schedule for the week?"
+"What are the steps to prepare for a job interview?"
+"How do I plan a road trip with friends?"
+
+Simply describe your task or question, and I will guide you through the process step by step.
