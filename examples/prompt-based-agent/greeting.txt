@@ -1,0 +1,12 @@
+Hello! Welcome to the Prompt-Based Agent example.
+
+This agent can:
+- Answer questions
+- Search for information
+- Generate text, code, or summaries
+- Help with daily tasks
+
+Try asking:
+- What's the weather today?
+- Summarize this article.
+- Write a short story.

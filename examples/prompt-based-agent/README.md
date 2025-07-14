@@ -122,5 +122,12 @@ Python 3.10+ is recommended.
 
 ## Deployment
 
-Just zip your source code, including the Dockerfile. Go to [eternalai.org](https://eternalai.org/your-agents), connect your wallet and create an GigaBrain agent. 
+To package your agent for deployment, simply run:
 
+```bash
+bash pack.sh
+````
+
+After the script finishes, a file named `package.zip` will be created in the current folder.
+
+Next, visit [eternalai.org](https://eternalai.org/your-agents), connect your wallet, and create a GigaBrain agent.
