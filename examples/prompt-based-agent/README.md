@@ -88,6 +88,9 @@ To customize the agent system prompt or personality, just modify the `system_pro
 - Use web tools for real-time information
 - Be honest when tools can't help
 
+**Note:**
+- The `greeting.txt` file is shown to users the first time they start a new conversation. You can customize this file to change the initial greeting message.
+
 ## Debugging
 
 Python 3.10+ is recommended.

@@ -12,7 +12,8 @@
   "scripts": {
     "start": "tsx ./src/index.ts",
     "dev": "tsx watch ./src/index.ts",
-    "test": "jest"
+    "test": "jest",
+    "package": "bash ./pack.sh"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

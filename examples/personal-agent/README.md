@@ -84,6 +84,6 @@ curl --location 'http://localhost:80/prompt' \
 ---
 
 **Note:**
-
+- The `greeting.txt` file is shown to users the first time they start a new conversation. You can customize this file to change the initial greeting message.
 - Keep the `PORT` and `LLM_BASE_URL` environment variables. They are required by the platform.
 - Replace any placeholder values and add details based on your agent setup.

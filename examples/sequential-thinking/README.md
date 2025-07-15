@@ -48,5 +48,6 @@ This will create a distributable package of your agent.
 - **Add tools:** Edit `src/mcp-server/index.ts`
 - **Configure:** Update environment variables
 - **Package:** `yarn package`
+- **Note:** The `greeting.txt` file is shown to users the first time they start a new conversation. You can customize this file to change the initial greeting message.
 
 For more details, see the [modelcontextprotocol/servers documentation](https://github.com/modelcontextprotocol/servers/blob/main/src/sequentialthinking/README.md).
